@@ -2,7 +2,7 @@
  * The ForwardBackward algorithm for Hidden Markov Models.
  * 
  */
-package hmm;
+package pages;
 
 import java.util.ArrayList;
 

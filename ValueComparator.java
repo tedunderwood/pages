@@ -1,4 +1,4 @@
-package hmm;
+package pages;
 
 import java.util.Comparator;
 import java.util.HashMap;

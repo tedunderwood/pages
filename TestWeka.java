@@ -1,7 +1,7 @@
 /**
  * 
  */
-package hmm;
+package pages;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.core.Instances;
 import weka.classifiers.Classifier;

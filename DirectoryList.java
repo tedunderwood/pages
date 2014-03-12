@@ -1,4 +1,4 @@
-package hmm;
+package pages;
 import java.io.File;
 import java.util.ArrayList;
 

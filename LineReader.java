@@ -1,4 +1,4 @@
-package hmm;
+package pages;
 
 import java.io.*;
 import java.util.Vector;

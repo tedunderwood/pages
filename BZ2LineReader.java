@@ -1,4 +1,4 @@
-package hmm;
+package pages;
 import java.io.*;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import java.util.ArrayList;

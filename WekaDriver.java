@@ -1,7 +1,7 @@
 /**
  * 
  */
-package hmm;
+package pages;
 import java.util.ArrayList;
 
 import weka.classifiers.Classifier;

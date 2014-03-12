@@ -1,7 +1,7 @@
 /**
  * 
  */
-package hmm;
+package pages;
 
 /**
  * @author tunderwood
