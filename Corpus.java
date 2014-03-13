@@ -2,7 +2,6 @@ package pages;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Scanner;
 
 public class Corpus {
 
@@ -208,67 +207,6 @@ public class Corpus {
 		}
 		return genre;
 	}
-
-	/**
-	 * Centers all features on the feature mean, and normalizes them by their
-	 * standard deviations. Aka, transforms features to z-scores. This is
-	 * desirable because I'm using regularized logistic regression, which will
-	 * shrink coefficients toward the origin, and shrinkage pressure is
-	 * distributed more evenly if the features have been normalized.
-	 */
-
-	private void normalizeFeatures(Vocabulary vocabulary) {
-		String[] vocabularyList = vocabulary.vocabularyList;
-		int vocabSize = vocabularyList.length;
-		double[] vocabMeans = vocabulary.meanFreqOfWords;
-		featureCount = vocabSize + FEATURESADDED;
-		
-		features = new ArrayList<String>(featureCount);
-		meansOfFeatures = new ArrayList<Double>(featureCount);
-		stdevOfFeatures = new ArrayList<Double>(featureCount);
-		for (int i = 0; i < vocabSize; ++i) {
-			features.add(vocabularyList[i]);
-			meansOfFeatures.add(vocabMeans[i]);
-		}
-		
-		for (String aFeature : STRUCTURALFEATURES) {
-			features.add(aFeature);
-		}
-
-		for (int i = vocabSize; i < featureCount; ++i) {
-			double sum = 0d;
-			for (DataPoint aPoint : datapoints) {
-				sum += aPoint.getVector()[i];
-			}
-			meansOfFeatures.add(sum / numPoints);
-		}
-
-		for (int i = 0; i < featureCount; ++i) {
-			stdevOfFeatures.add(0d);
-			for (DataPoint aPoint : datapoints) {
-				double current = stdevOfFeatures.get(i);
-				current = current
-						+ Math.pow((aPoint.vector[i] - meansOfFeatures.get(i)),
-								2);
-				stdevOfFeatures.set(i, current);
-			}
-			// We've summed the variance; now divide by the number of points and
-			// take sqrt to get stdev.
-			stdevOfFeatures.set(i,
-					Math.sqrt(stdevOfFeatures.get(i) / numPoints));
-		}
-
-		double[] vector = new double[featureCount];
-		// now normalize ALL the points!
-		for (DataPoint aPoint : datapoints) {
-			vector = aPoint.vector;
-			for (int i = 0; i < featureCount; ++i) {
-				vector[i] = (vector[i] - meansOfFeatures.get(i))
-						/ stdevOfFeatures.get(i);
-			}
-			aPoint.setVector(vector);
-		}
-	}
 	
 	/**
 	 * Centers all features on the feature mean, and normalizes them by their
@@ -312,7 +250,7 @@ public class Corpus {
 				meansOfFeatures.add(sum / numPoints);
 			}
 	
-			this.featureCount = vocabSize + FEATURESADDED;
+			featureCount = vocabSize + FEATURESADDED;
 			for (int i = 0; i < featureCount; ++i) {
 				stdevOfFeatures.add(0d);
 				for (DataPoint aPoint : datapoints) {

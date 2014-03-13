@@ -121,7 +121,7 @@ public class WekaDriver {
 	}
 	
 	public double[][] testNewInstances(ArrayList<DataPoint> pointsToTest) {
-		int poscount = 0;
+
 		String genreToIdentify = classLabel;
 		int testSize = pointsToTest.size();
 		double[][] testProbs = new double[testSize][2];
@@ -136,7 +136,6 @@ public class WekaDriver {
 			}
 			if (aPoint.genre.equals(genreToIdentify)) {
 				instance.setValue((Attribute)featureNames.elementAt(numFeatures), "positive");
-				poscount += 1;
 			}
 			else {
 				instance.setValue((Attribute)featureNames.elementAt(numFeatures), "negative");

@@ -54,7 +54,7 @@ public class Model {
 		for (int i = 2; i < numGenres; ++i) {
 			String aGenre = genres.get(i);
 			WekaDriver classify = new WekaDriver(corpus.genres,
-					corpus.features, aGenre, corpus.datapoints, ridge, true);
+					Corpus.features, aGenre, corpus.datapoints, ridge, true);
 			double[][] probs = classify.getPredictions();
 			for (int j = 0; j < numInstances; ++j) {
 				classProbs.get(j)[i] = probs[j][0];
@@ -90,7 +90,7 @@ public class Model {
 			for (int i = 2; i < numGenres; ++i) {
 				String aGenre = genres.get(i);
 				WekaDriver classify = new WekaDriver(corpus.genres,
-						corpus.features, aGenre, trainingCorpus, ridge, false);
+						Corpus.features, aGenre, trainingCorpus, ridge, false);
 				double[][] probs = classify.testNewInstances(testCorpus);
 				for (int j = 0; j < testSize; ++j) {
 					classProbs.get(j)[i] = probs[j][0];
