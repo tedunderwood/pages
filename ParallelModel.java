@@ -5,16 +5,23 @@ package pages;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author tunderwood
  * 
  */
-public class ApplyModel {
+public class ParallelModel {
 
 	/**
+	 * This was originally based on Genre/pages/ApplyModel. Changed it by parallelizing
+	 * both the training of the model and the application of the model.
+	 * 
 	 * @param args
 	 */
+	static int NTHREADS = 10;
 	static String ridge = "3";
 	static int featureCount;
 	static Corpus corpus;
@@ -48,71 +55,63 @@ public class ApplyModel {
 		vocabulary = Corpus.vocabulary;
 		ArrayList<String> features = Corpus.features;
 		
-		ArrayList<WekaDriver> classifiers = new ArrayList<WekaDriver>(numGenres);
-
+		ExecutorService executive = Executors.newFixedThreadPool(NTHREADS);
+		ArrayList<TrainingThread> trainingThreads = new ArrayList<TrainingThread>(numGenres);
+		
 		for (int i = 0; i < numGenres; ++i) {
-			String aGenre = "";
-			if (i >= 2){
-				aGenre = genres.get(i);
-			}
-			else {
-				aGenre = genres.get(2);
-			}
-			// The first two genres are dummy positions for the front and back of the volume
-			// so I can't train classifiers for them. Instead we just train dummy classifiers
-			// for the first real genre, #2.
-			WekaDriver classifyGenre = new WekaDriver(corpus.genres,
-					features, aGenre, corpus.datapoints, ridge, true);
-			classifiers.add(classifyGenre);
+			String aGenre;
+			if (i < 2) aGenre = "dummy";
+			else aGenre = genres.get(i);
+			// The first two genres are dummy genres for the front and back of the volume. So we don't actually train classifiers
+			// for them. The trainingThread class knows to return a dummy classifier when aGenre.equals("dummy").
+			
+			TrainingThread trainClassifier = new TrainingThread(corpus.genres, features, aGenre, corpus.datapoints, ridge, true);
+			trainingThreads.add(trainClassifier);
 		}
 		
+		for (int i = 0; i < numGenres; ++i) {
+			executive.execute(trainingThreads.get(i));
+		}
 		
+		executive.shutdown();
+		// stops the addition of new threads; pool will terminate when these threads have completed
+		try {
+			executive.awaitTermination(6000, TimeUnit.SECONDS);
+		}
+		catch (InterruptedException e) {
+			System.out.println("Helpful error message: Execution was interrupted.");
+		}
+		// block until all threads are completed
+		
+		ArrayList<WekaDriver> classifiers = new ArrayList<WekaDriver>(numGenres);
+		
+		for (int i = 0; i < numGenres; ++ i) {
+			classifiers.add(trainingThreads.get(i).classifier);
+		}
+			
 		MarkovTable markov = corpus.makeMarkovTable(corpus.volumeLabels, MARKOVSMOOTHING);
 		
-		for (String thisFile : filesToProcess) {
-			System.out.println(thisFile);
-			ArrayList<String> wrapper = new ArrayList<String>();
-			wrapper.add(thisFile);
-			
-			Corpus thisVolume = new Corpus(dirToProcess, wrapper);
-			int numPoints = thisVolume.numPoints;
-			ArrayList<DataPoint> thesePages = thisVolume.datapoints;
+		ExecutorService classifierPool = Executors.newFixedThreadPool(NTHREADS);
+		ArrayList<ClassifyingThread> filesToClassify = new ArrayList<ClassifyingThread>(filesToProcess.size());
 		
-			ArrayList<double[]> rawProbs = new ArrayList<double[]>(numPoints);
-			for (int i = 0; i < numPoints; ++i) {
-				double[] probs = new double[numGenres];
-				Arrays.fill(probs, 0);
-				rawProbs.add(probs);
-			}
-			
-			for (int i = 2; i < numGenres; ++i) {
-				WekaDriver classify = classifiers.get(i);
-				double[][] probs = classify.testNewInstances(thesePages);
-				for (int j = 0; j < numPoints; ++j) {
-					rawProbs.get(j)[i] = probs[j][0];
-				}
-			}
-			
-			ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
-//			
-//			double[] randomvalues = smoothedProbs.get(50);
-//			for (double value : randomvalues) {
-//				System.out.println("prob " + String.valueOf(value));
-//			}
-			ArrayList<String> rawPredictions = interpretEvidence(rawProbs);
-			ArrayList<String> predictions = interpretEvidence(smoothedProbs);
-			
-			String outFile = thisFile + ".predict";
-			String outPath = dirForOutput + "/" + outFile;
-			
-			LineWriter writer = new LineWriter(outPath, false);
-
-			String[] outlines = new String[numPoints];
-			for (int i = 0; i < numPoints; ++i) {
-				outlines[i] = thesePages.get(i).label + "\t" + rawPredictions.get(i) + "\t" + predictions.get(i);
-			}
-			writer.send(outlines);
+		for (String thisFile : filesToProcess) {
+			ClassifyingThread fileClassifier = new ClassifyingThread(thisFile, dirToProcess, dirForOutput, numGenres, 
+					classifiers, markov, genres);
+			filesToClassify.add(fileClassifier);
 		}
+		
+		for (ClassifyingThread fileClassifier: filesToClassify) {
+			classifierPool.execute(fileClassifier);
+		}
+		
+		classifierPool.shutdown();
+		try {
+			executive.awaitTermination(6000, TimeUnit.SECONDS);
+		}
+		catch (InterruptedException e) {
+			System.out.println("Helpful error message: Execution was interrupted.");
+		}
+		// block until all threads are completed
 	}
 		
 

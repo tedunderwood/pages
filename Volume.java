@@ -49,7 +49,7 @@ public class Volume {
 	 * This method accepts a line from the database, already parsed into a
 	 * sequence of fields, with docid removed (it is volumeID of this volume).
 	 *  
-	 * @param feature:	0 - pageNum, 1 - formField, 2 - word, 3 - count
+	 * @param feature:	0 - pageNum, 1 - feature, 2 - count
 	 * 
 	 */
 	public void addFeature(String[] feature) {
@@ -59,8 +59,12 @@ public class Volume {
 		// The number of pages in the volume is defined as the number of distinct
 		// page numbers it receives. Note that this is not necessarily == to the
 		// maximum pageNum value. It's possible for some pages to be blank, in
-		// which case we may have no information about them here even though they've
+		// which case we might conceivable have no information about them here even though they've
 		// increased the max pageNum value.
+		
+		// In reality, given my current page-level tokenizing script (NormalizeOCR 1.0),
+		// it's pretty much *not* possible to have a page without features, because e.g.
+		// #textlines gets reported even if zero.
 		
 		int pageNum = Integer.parseInt(feature[0]);
 		if (!listOfPages.contains(pageNum)) {
@@ -68,8 +72,11 @@ public class Volume {
 			numberOfPages = listOfPages.size();
 		}
 		
-		if (!feature[2].startsWith("#")) {
-			totalWords += Integer.parseInt(feature[3]);
+		String featurename = feature[1];
+		int count = Integer.parseInt(feature[2]);
+		
+		if (!featurename.startsWith("#")) {
+			totalWords += count; 
 		}
 		
 		if (pageNum > maxPageNum) maxPageNum = pageNum;
@@ -78,8 +85,7 @@ public class Volume {
 		// of lines in a page, this needs to be added to the listOfLineCounts
 		// for pages in the volume.
 		
-		if (feature[2].equals("#textlines")) {
-			int count = Integer.parseInt(feature[3]);
+		if (featurename .equals("#textlines")) {
 			listOfLineCounts.add(count);
 		}
 		
@@ -129,7 +135,23 @@ public class Volume {
 			}
 		}
 		
-		// We need to know the mean number of lines per page.
+		// We create the following eleven "structural" features that are designed to
+		// characterize types of paratext by capturing typographical characteristics
+		// of pages.
+		//
+		// "posInVol" = pagenum / totalpages
+		// "lineLengthRatio" = textlines / mean lines per page
+		// "capRatio" = caplines / textlines
+		// "wordRatio" = words on page / mean words per page
+		// "distanceFromMid" = abs( 0.5 - posInVol)
+		// "allCapRatio" = words in all caps / words on this page
+		// "maxInitalRatio" = largest number of repeated initials / textlines
+		// "maxPairRatio" = largest number of repeats for alphabetically adjacent initials / textlines
+		// "wordsPerLine" = total words on page / total lines on page
+		// "totalWords" = total words on page
+		// "typeToken" = number of types / total words on page.
+		//
+		// NOTE that this must match the list of structural features in Global.
 		
 		int totalTextLines = 0;
 		for (int lineCount: listOfLineCounts) {
@@ -143,7 +165,7 @@ public class Volume {
 		else {
 			// avoid division by zero, here and later
 			meanLinesPerPage = 1;
-			System.out.println("Suspicious mean lines per page.");
+			System.out.println("Suspicious mean lines per page in volume " + volumeID);
 		}
 		
 		double meanWordsPerPage;
@@ -151,8 +173,8 @@ public class Volume {
 			meanWordsPerPage = totalWords / (double) numberOfPages;
 		}
 		else {
-			meanWordsPerPage = 10;
-			System.out.println("Suspicious mean words per page.");
+			meanWordsPerPage = 1;
+			System.out.println("Suspicious mean words per page in volume " + volumeID);
 		}
 		
 		// We're going to create a DataPoint for each page.
@@ -165,48 +187,72 @@ public class Volume {
 			
 			// Create a vector of the requisite dimensionality; initialize to zero.
 			// Note that the dimensionality for page points is 
-			// vocabularySize + 6  !!
+			// vocabularySize + 11  !! Because structural features.
 			
 			int vocabularySize = vocabularyMap.size();
-			int dimensionality = vocabularySize + 6;
+			int dimensionality = vocabularySize + 11;
 			double[] vector = new double[dimensionality];
-			double sumAllWords = 0;
+			double sumAllWords = 0.0001d;
+			// This is a super-cheesy way to avoid div by zero.
 			double types = 0;
 			Arrays.fill(vector, 0);
 			
-			double textlines = 0.1;
-			// simple hack to avoid division by zero later in case
-			// of a missing value
-			double caplines = 0;
-			
 			// Then sum all occurrences of words to the appropriate vector index.
+			double textlines = 0.0001d;
+			double caplines = 0;
+			double maxinitial = 0;
+			double maxpair = 0;
+			double allcapwords = 0;
 			
 			for (String[] feature : thisPage) {
-				String word = feature[2];
-				types += 1;
+				String word = feature[1];
 				if (vocabularyMap.containsKey(word)) {
+					types += 1;
+					// Note that since "wordNotInVocab" is, paradoxically, in the vocab,
+					// this will count separate occurrences of "wordNotInVocab" as new types,
+					// and sum their counts.
 					int idx = vocabularyMap.get(word);
-					double count = Double.parseDouble(feature[3]);
+					double count = Double.parseDouble(feature[2]);
 					vector[idx] += count;
 					sumAllWords += count;
-					continue;
 				}
+				
 				if (word.equals("#textlines")) {
-					textlines = Double.parseDouble(feature[3]);
-					// Really an integer but cast as double to avoid 
-					// integer division
+					textlines = Double.parseDouble(feature[2]);
 					continue;
+					// Really an integer but cast as double to avoid 
+					// integer division. Same below.
 				}
+				
 				if (word.equals("#caplines")) {
-					caplines = Double.parseDouble(feature[3]);
-					// Really an integer but cast as double to avoid 
-					// integer division
+					caplines = Double.parseDouble(feature[2]);
 					continue;
 				}
+				
+				if (word.equals("#maxinitial")) {
+					maxinitial = Double.parseDouble(feature[2]);
+					continue;
+				}
+				
+				if (word.equals("#maxpair")) {
+					maxpair = Double.parseDouble(feature[2]);
+					continue;
+				}
+				
+				if (word.equals("#allcapswords")) {
+					allcapwords = Double.parseDouble(feature[2]);
+				}
+				
+			}
+			
+			// Normalize the feature counts for total words on page:
+			
+			for (int j = 0; j < vocabularySize; ++ j) {
+				vector[j] = vector[j] / sumAllWords;
 			}
 			
 			// Now we have a feature vector with all the words filled in, but
-			// the three extra spaces at the end are still zero.
+			// the eleven extra spaces at the end are still zero.
 			// We need to create structural "page features."
 			
 			double positionInVol = (double) thisPageNum / maxPageNum;
@@ -225,10 +271,20 @@ public class Volume {
 			vector[vocabularySize + 2] = capRatio;
 			// proportion of lines that are initial-capitalized
 			vector[vocabularySize + 3] = sumAllWords / meanWordsPerPage;
-			// length in words relative to mean for volume
+			// wordRatio: length in words relative to mean for volume
 			vector[vocabularySize + 4] = Math.abs(thisPageNum - (maxPageNum/2)) / (double) maxPageNum;
-			// absolute distance from midpoint of volume, normalized for length of volume
-			vector[vocabularySize + 5] = types / sumAllWords;
+			// distanceFrom Mid: absolute distance from midpoint of volume, normalized for length of volume
+			vector[vocabularySize + 5] = allcapwords / sumAllWords;
+			// "allCapRatio" = words in all caps / words on this page
+			vector[vocabularySize + 6] = maxinitial / textlines;
+			// "maxInitalRatio" = largest number of repeated initials / textlines
+			vector[vocabularySize + 7] = maxpair / textlines;		
+			// "maxPairRatio" = largest number of repeats for alphabetically adjacent initials / textlines
+			vector[vocabularySize + 8] = sumAllWords / textlines;
+			// "wordsPerLine" = total words on page / total lines on page
+			vector[vocabularySize + 9] = sumAllWords;
+			// "totalWords" = total words on page
+			vector[vocabularySize + 10] = types / sumAllWords;
 			// type-token ratio
 			
 			String label = volumeID + "," + Integer.toString(thisPageNum);

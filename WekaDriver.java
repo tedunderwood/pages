@@ -26,6 +26,12 @@ public class WekaDriver {
 	String classLabel;
 	double[][] memberProbs;
 	
+	public WekaDriver (String genre) {
+		// Returns a dummy class to fill an unused spot in the ArrayList.
+		// TODO: Refactor so this is not necessary.
+		this.classLabel = genre;
+	}
+	
 	public WekaDriver (GenreList genres, ArrayList<String> features, String genreToIdentify, ArrayList<DataPoint> datapoints, String ridgeParameter, boolean verbose) {
 		numFeatures = features.size();
 		numInstances = datapoints.size();
@@ -33,7 +39,8 @@ public class WekaDriver {
 		this.classLabel = genreToIdentify;
 		memberProbs = new double[numInstances][2];
 		
-		LineWriter writer = new LineWriter("/Users/tunderwood/Eclipse/StandardOut.txt", true);
+		String outpath = "/Users/tunder/output/" + classLabel;
+		LineWriter writer = new LineWriter(outpath, false);
 		
 		featureNames = new FastVector(numFeatures + 1);
 		for (int i = 0; i < numFeatures; ++ i) {
@@ -45,7 +52,7 @@ public class WekaDriver {
 		FastVector classValues = new FastVector(2);
 		classValues.addElement("positive");
 		classValues.addElement("negative");
-		Attribute classAttribute = new Attribute("class", classValues);
+		Attribute classAttribute = new Attribute("ClassAttribute", classValues);
 		featureNames.addElement(classAttribute);
 		
 		trainingSet = new Instances(genreToIdentify, featureNames, numInstances);
@@ -72,6 +79,7 @@ public class WekaDriver {
 		if (verbose) {
 			writer.print(genreToIdentify + " count: " + poscount + "\n");
 		}
+		System.out.println(featureNames.size());
 		System.out.println(genreToIdentify + " count: " + poscount);
 		
 		try {

@@ -142,7 +142,7 @@ public class MarkovTable {
 			}
 			probabilityMatrix[i] = proportions;
 		}
-		IOUtils.writeTSV(probabilityMatrix, "/Users/tunderwood/Eclipse/markov.tsv", 4);
+		IOUtils.writeTSV(probabilityMatrix, "/Users/tunder/output/markov2.tsv", 4);
 	}
 	
 	public double[] transitionProbs(int genre) {
