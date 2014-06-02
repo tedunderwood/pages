@@ -26,5 +26,40 @@ public class GenreList {
 	public int getSize() {
 		return genreLabels.size();
 	}
+	
+	/**
+	 * Compares this GenreList to another to decide whether they are equal.
+	 * For this purpose we treat the lists as if they were sets. Two lists 
+	 * are equal if they are the same length, and if every member of list A
+	 * is present in list B.
+	 * 
+	 * Since the addLabel method does not allow duplicate labels, it is not
+	 * necessary to test the converse (every member of B also present in A).
+	 * 
+	 * @param otherList The GenreList to be compared to this one.
+	 * @return
+	 */	
+	public boolean equals(GenreList otherList) {
+		ArrayList<String> otherLabels = otherList.genreLabels;
+		
+		if (otherLabels.size() == genreLabels.size()) {
+			
+			boolean theyareequal = true;
+			
+			for (String label : genreLabels) {
+				boolean matchfound = false;
+				for (String otherLabel : otherLabels) {
+					if (label.equals(otherLabel)) matchfound = true;
+				}
+				if (!matchfound){
+					theyareequal = false;
+				}
+			}
+			return theyareequal;
+		}
+		else {
+			return false;
+		}
+	}
 
 }

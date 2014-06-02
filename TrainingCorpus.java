@@ -343,17 +343,8 @@ public class TrainingCorpus {
 		return markov;
 	}
 	
-	/**
-	 * Given lists of files in two different folders, with different extensions,
-	 * creates a list of the intersection between them -- i.e., a list of parts before
-	 * the extension that are found in both folders.
-	 * 
-	 * In particular, it assumes that the featureFiles will have a ".pg.tsv" extension
-	 * and the genre files will have a ".map" extension.
-	 *  
-	 * @param genreFiles
-	 * @param featureFiles
-	 * @return
-	 */
+	public int getNumGenres() {
+		return genres.getSize();
+	}
 
 }
