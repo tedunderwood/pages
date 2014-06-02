@@ -34,6 +34,7 @@ public class TrainingCorpus {
 		// for classification. Features is a map where the feature names are keys and
 		// the values are integers representing sequence order.
 		
+		this.trainingVols = trainingVols;
 		numVolumes = trainingVols.size();
 		
 		// First read in a genre sequence for each volume.

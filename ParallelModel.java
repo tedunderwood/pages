@@ -49,7 +49,7 @@ public class ParallelModel {
 		String dirForOutput = "/Users/tunder/output/genremaps/";
 		String vocabPath = "/Users/tunder/Dropbox/pagedata/vocabulary.txt";
 		
-		boolean crossvalidate = false;
+		boolean crossvalidate = true;
 		
 		vocabulary = new Vocabulary(vocabPath, 1000, true);
 		// reads in the first 1000 features and adds a catch-all category
@@ -170,7 +170,7 @@ public class ParallelModel {
 			classifiers.add(trainingThreads.get(i).classifier);
 		}
 			
-		MarkovTable markov = corpus.makeMarkovTable(corpus.trainingVols, MARKOVSMOOTHING);
+		MarkovTable markov = corpus.makeMarkovTable(trainingVols, MARKOVSMOOTHING);
 		
 		ExecutorService classifierPool = Executors.newFixedThreadPool(NTHREADS);
 		ArrayList<ClassifyingThread> filesToClassify = new ArrayList<ClassifyingThread>(volsToProcess.size());
