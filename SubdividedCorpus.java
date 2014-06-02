@@ -10,14 +10,14 @@ import java.util.ArrayList;
  */
 public class SubdividedCorpus {
 	int folds;
-	Corpus corpus;
+	TrainingCorpus corpus;
 	ArrayList<ArrayList<DataPoint>> partitionedPoints;
 	ArrayList<ArrayList<String>> partitionedVolumes;
 	
-	public SubdividedCorpus(Corpus corpus, int folds) {
+	public SubdividedCorpus(TrainingCorpus corpus, int folds) {
 		this.corpus = corpus;
 		this.folds = folds;
-		ArrayList<String> volumeIDs = corpus.volumeLabels;
+		ArrayList<String> volumeIDs = corpus.trainingVols;
 		
 		partitionedVolumes = new ArrayList<ArrayList<String>>();
 		for (int i = 0; i < folds; ++i) {

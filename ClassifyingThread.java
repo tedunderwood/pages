@@ -30,7 +30,7 @@ public class ClassifyingThread implements Runnable {
 		ArrayList<String> wrapper = new ArrayList<String>();
 		wrapper.add(thisFile);
 		
-		Corpus thisVolume = new Corpus(inputDir, wrapper);
+		TrainingCorpus thisVolume = new TrainingCorpus(inputDir, wrapper);
 		int numPoints = thisVolume.numPoints;
 		ArrayList<DataPoint> thesePages = thisVolume.datapoints;
 	
