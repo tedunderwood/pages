@@ -46,10 +46,16 @@ public class ParallelModel {
 		String featureDir = "/Users/tunder/Dropbox/pagedata/pagefeatures/";
 		String genreDir = "/Users/tunder/Dropbox/pagedata/genremaps/";
 		String dirToProcess = "/Users/tunder/Dropbox/pagedata/pagefeatures/";
-		String dirForOutput = "/Users/tunder/output/genremaps/";
 		String vocabPath = "/Users/tunder/Dropbox/pagedata/vocabulary.txt";
+		String dirForOutput;
+		boolean crossvalidate = false;
 		
-		boolean crossvalidate = true;
+		if (crossvalidate) {
+			dirForOutput = "/Users/tunder/output/crossvalidate/";
+		}
+		else {
+			dirForOutput = "/Users/tunder/output/genremaps/";
+		}
 		
 		vocabulary = new Vocabulary(vocabPath, 1000, true);
 		// reads in the first 1000 features and adds a catch-all category

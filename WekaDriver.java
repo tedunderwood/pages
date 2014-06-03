@@ -3,7 +3,7 @@
  */
 package pages;
 import java.util.ArrayList;
-
+import java.io.File;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.core.Attribute;
@@ -40,7 +40,10 @@ public class WekaDriver {
 		memberProbs = new double[numInstances][2];
 		
 		String outpath = "/Users/tunder/output/" + classLabel;
-		LineWriter writer = new LineWriter(outpath, false);
+		File existingVersion = new File(outpath);
+		if (existingVersion.exists()) existingVersion.delete();
+		
+		LineWriter writer = new LineWriter(outpath, true);
 		
 		featureNames = new FastVector(numFeatures + 1);
 		for (int i = 0; i < numFeatures; ++ i) {
