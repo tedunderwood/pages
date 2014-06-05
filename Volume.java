@@ -183,6 +183,11 @@ public class Volume {
 		for (int i = 0; i < numberOfPages; ++i) {
 			
 			ArrayList<String[]> thisPage = featuresByPage.get(i);
+			if (thisPage.size() < 1) {
+				// there are no features in this page
+				System.out.println("Error: featureless page " + Integer.toString(i));
+				continue;
+			}
 			int thisPageNum = listOfPages.get(i);
 			
 			// Create a vector of the requisite dimensionality; initialize to zero.

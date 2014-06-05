@@ -33,7 +33,7 @@ public class ParallelModel {
 
 	static int NTHREADS = 10;
 	static int NFOLDS = 5;
-	static String ridge = "3";
+	static String ridge = "30";
 	static int featureCount;
 	static int numGenres;
 	static int numInstances;
@@ -43,10 +43,10 @@ public class ParallelModel {
 	static Vocabulary vocabulary;
 
 	public static void main(String[] args) {
-		String featureDir = "/Users/tunder/Dropbox/pagedata/pagefeatures/";
-		String genreDir = "/Users/tunder/Dropbox/pagedata/genremaps/";
-		String dirToProcess = "/Users/tunder/Dropbox/pagedata/pagefeatures/";
-		String vocabPath = "/Users/tunder/Dropbox/pagedata/vocabulary.txt";
+		String featureDir = "/Users/tunder/Dropbox/pagedata/oldtraining/newpagefeatures/";
+		String genreDir = "/Users/tunder/Dropbox/pagedata/oldtraining/genremaps/";
+		String dirToProcess = "/Users/tunder/Dropbox/pagedata/oldtraining/newpagefeatures/";
+		String vocabPath = "/Users/tunder/Dropbox/pagedata/thirdvocabulary.txt";
 		String dirForOutput;
 		boolean crossvalidate = false;
 		
@@ -92,6 +92,7 @@ public class ParallelModel {
 			
 			Partition partition = new Partition(filesToProcess, NFOLDS);
 			for (int i = 0; i < NFOLDS; ++i) {
+				System.out.println("Iteration: " + Integer.toString(i));
 				ArrayList<String> trainingSet = partition.volumesExcluding(i);
 				ArrayList<String> testSet = partition.volumesInFold(i);
 				GenreList newGenreList = trainAndClassify(trainingSet, featureDir, genreDir, 
@@ -112,6 +113,8 @@ public class ParallelModel {
 		else {
 			trainAndClassify(volumeLabels, featureDir, genreDir, dirToProcess, filesToProcess, dirForOutput);
 		}
+	
+		System.out.println("DONE.");
 	}
 	
 	/**
@@ -139,7 +142,6 @@ public class ParallelModel {
 		System.out.println(numGenres);
 		numInstances = corpus.numPoints;
 		genres = corpus.genres.genreLabels;
-		vocabulary = TrainingCorpus.vocabulary;
 		ArrayList<String> features = TrainingCorpus.features;
 		
 		ExecutorService executive = Executors.newFixedThreadPool(NTHREADS);
@@ -270,7 +272,6 @@ public class ParallelModel {
 				if (isMatched) hathiIDs.add(idPart);
 			}
 		}
-		System.out.println("Length " + hathiIDs.size());
 		return hathiIDs;
 	}
 

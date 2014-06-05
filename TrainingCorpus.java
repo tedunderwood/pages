@@ -79,7 +79,6 @@ public class TrainingCorpus {
 			Volume thisVol = volumes.get(i);
 			ArrayList<String> genresOfThisVol = volumeGenres.get(i);
 			
-			System.out.println(thisVol.volumeID);
 			ArrayList<DataPoint> newPoints = thisVol.makePagePoints(featureMap);
 			
 			if (genresOfThisVol.size() != newPoints.size()) {
@@ -169,7 +168,7 @@ public class TrainingCorpus {
 				int tokenCount = tokens.length;
 				if (tokenCount != 2) {
 					System.out.println("Error: tokenCount not equal to 2 at "
-							+ line);
+							+ line + " in " + label);
 					// not the world's most sophisticated error handling here
 					// TODO: define Exception handling for input format issues
 					continue;
@@ -228,19 +227,8 @@ public class TrainingCorpus {
 		datapoints = thisVol.makePagePoints(featureMap);
 		numPoints = datapoints.size();
 		
-//		System.out.println(thisVol.volumeID + "  " + String.valueOf(thisVol.maxPageNum) + "  " + String.valueOf(numPoints));
-//		
-//		Scanner keyboard = new Scanner(System.in);
-//		String userInput = keyboard.nextLine();
-		
 		newNormalizeFeatures(vocabulary, false);
 		// false because this is not a training corpus.
-		
-//		DataPoint aPoint = datapoints.get(50);
-//		double[] randomvalues = aPoint.vector;
-//		for (double value : randomvalues) {
-//			System.out.println(value);
-//		}
 
 	}
 

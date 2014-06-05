@@ -3,7 +3,7 @@
  */
 package pages;
 import java.util.ArrayList;
-import java.io.File;
+// import java.io.File;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.core.Attribute;
@@ -39,9 +39,9 @@ public class WekaDriver {
 		this.classLabel = genreToIdentify;
 		memberProbs = new double[numInstances][2];
 		
-		String outpath = "/Users/tunder/output/" + classLabel;
-		File existingVersion = new File(outpath);
-		if (existingVersion.exists()) existingVersion.delete();
+		String outpath = "/Users/tunder/output/classifiers/" + classLabel;
+		// File existingVersion = new File(outpath);
+		// if (existingVersion.exists()) existingVersion.delete();
 		
 		LineWriter writer = new LineWriter(outpath, true);
 		
@@ -82,7 +82,6 @@ public class WekaDriver {
 		if (verbose) {
 			writer.print(genreToIdentify + " count: " + poscount + "\n");
 		}
-		System.out.println(featureNames.size());
 		System.out.println(genreToIdentify + " count: " + poscount);
 		
 		try {

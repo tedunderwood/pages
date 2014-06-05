@@ -12,7 +12,9 @@ public LineReader(String dirPath) {
 
 public String[] readlines() {
 	try{
-		BufferedReader filein = new BufferedReader(new FileReader(fileName));
+		BufferedReader filein = new BufferedReader(
+				new InputStreamReader(
+		                  new FileInputStream(fileName), "UTF8"));
 		Vector<String> holding = new Vector<String>(1000,1000);
 		int count = 0;
 		try{

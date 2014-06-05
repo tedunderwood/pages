@@ -26,7 +26,6 @@ public class ClassifyingThread implements Runnable {
 
 	@Override
 	public void run() {
-		System.out.println(thisFile);
 		ArrayList<String> wrapper = new ArrayList<String>();
 		wrapper.add(thisFile);
 		
