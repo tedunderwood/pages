@@ -43,15 +43,16 @@ public class ParallelModel {
 	static Vocabulary vocabulary;
 
 	public static void main(String[] args) {
-		String featureDir = "/Users/tunder/Dropbox/pagedata/oldtraining/newpagefeatures/";
-		String genreDir = "/Users/tunder/Dropbox/pagedata/oldtraining/genremaps/";
-		String dirToProcess = "/Users/tunder/Dropbox/pagedata/oldtraining/newpagefeatures/";
-		String vocabPath = "/Users/tunder/Dropbox/pagedata/thirdvocabulary.txt";
+		String sourceKind = "mixedtraining";
+		String featureDir = "/Users/tunder/Dropbox/pagedata/" + sourceKind + "/pagefeatures/";
+		String genreDir = "/Users/tunder/Dropbox/pagedata/" + sourceKind + "/genremaps/";
+		String dirToProcess = "/Users/tunder/Dropbox/pagedata/" + sourceKind + "/pagefeatures/";
+		String vocabPath = "/Users/tunder/Dropbox/pagedata/mixedvocabulary.txt";
 		String dirForOutput;
-		boolean crossvalidate = false;
+		boolean crossvalidate = true;
 		
 		if (crossvalidate) {
-			dirForOutput = "/Users/tunder/output/crossvalidate/";
+			dirForOutput = "/Users/tunder/output/" + sourceKind + "/";
 		}
 		else {
 			dirForOutput = "/Users/tunder/output/genremaps/";
