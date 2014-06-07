@@ -43,7 +43,7 @@ public class ParallelModel {
 	static Vocabulary vocabulary;
 
 	public static void main(String[] args) {
-		String sourceKind = "oldtraining";
+		String sourceKind = "mixedtraining";
 		String featureDir = "/Users/tunder/Dropbox/pagedata/" + sourceKind + "/pagefeatures/";
 		String genreDir = "/Users/tunder/Dropbox/pagedata/" + sourceKind + "/genremaps/";
 		String dirToProcess = "/Users/tunder/Dropbox/pagedata/" + sourceKind + "/pagefeatures/";
@@ -52,7 +52,7 @@ public class ParallelModel {
 		boolean crossvalidate = true;
 		
 		if (crossvalidate) {
-			dirForOutput = "/Users/tunder/output/oldtraining/";
+			dirForOutput = "/Users/tunder/output/mixedtraining/";
 		}
 		else {
 			dirForOutput = "/Users/tunder/output/genremaps/";
@@ -196,19 +196,13 @@ public class ParallelModel {
 		
 		classifierPool.shutdown();
 		try {
-			executive.awaitTermination(6000, TimeUnit.SECONDS);
+			classifierPool.awaitTermination(6000, TimeUnit.SECONDS);
 		}
 		catch (InterruptedException e) {
 			System.out.println("Helpful error message: Execution was interrupted.");
 		}
 		// block until all threads are completed
 		
-		try {
-			System.out.println("Waiting to make sure threads have completed.");
-		    TimeUnit.SECONDS.sleep(100);
-		} catch (InterruptedException e) {
-		    //Handle exception
-		}
 		
 		// write prediction metadata (confidence levels)
 		
