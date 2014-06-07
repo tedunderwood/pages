@@ -52,7 +52,7 @@ public class ParallelModel {
 		boolean crossvalidate = true;
 		
 		if (crossvalidate) {
-			dirForOutput = "/Users/tunder/output/" + sourceKind + "/";
+			dirForOutput = "/Users/tunder/output/mixedtraining/";
 		}
 		else {
 			dirForOutput = "/Users/tunder/output/genremaps/";
@@ -202,6 +202,18 @@ public class ParallelModel {
 			System.out.println("Helpful error message: Execution was interrupted.");
 		}
 		// block until all threads are completed
+		
+		// write prediction metadata (confidence levels)
+		
+		String outPath = dirForOutput + "/predictionMetadata.tsv";
+		
+		LineWriter metadataWriter = new LineWriter(outPath, true);
+		String[] metadata = new String[filesToClassify.size()];
+		int i = 0;
+		for (ClassifyingThread completedClassification : filesToClassify) {
+			metadata[i] = completedClassification.predictionMetadata;
+		}
+		metadataWriter.send(metadata);
 		
 		return corpus.genres;
 	}

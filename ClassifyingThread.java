@@ -12,6 +12,7 @@ public class ClassifyingThread implements Runnable {
 	private ArrayList<String> genres;
 	private ArrayList<WekaDriver> classifiers;
 	private MarkovTable markov;
+	public String predictionMetadata;
 	
 	public ClassifyingThread(String thisFile, String inputDir, String outputDir, int numGenres, 
 			ArrayList<WekaDriver> classifiers, MarkovTable markov, ArrayList<String> genres) {
@@ -49,13 +50,12 @@ public class ClassifyingThread implements Runnable {
 		}
 		
 		ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
-//		
-//		double[] randomvalues = smoothedProbs.get(50);
-//		for (double value : randomvalues) {
-//			System.out.println("prob " + String.valueOf(value));
-//		}
-		ArrayList<String> rawPredictions = interpretEvidence(rawProbs);
-		ArrayList<String> predictions = interpretEvidence(smoothedProbs);
+
+		ClassificationResult rawResult = new ClassificationResult(rawProbs, numGenres, genres);
+		ClassificationResult smoothedResult = new ClassificationResult(smoothedProbs, numGenres, genres);
+		
+		ArrayList<String> rawPredictions = rawResult.predictions;
+		ArrayList<String> predictions = smoothedResult.predictions;
 		
 		String outFile = thisFile + ".predict";
 		String outPath = outputDir + "/" + outFile;
@@ -67,26 +67,10 @@ public class ClassifyingThread implements Runnable {
 			outlines[i] = thesePages.get(i).label + "\t" + rawPredictions.get(i) + "\t" + predictions.get(i);
 		}
 		writer.send(outlines);
+		
+		predictionMetadata = thisFile + "\t" + Double.toString(smoothedResult.averageMaxProb) + "\t" +
+				Double.toString(smoothedResult.averageGap) + "\n";
 	}
 	
-
-	private ArrayList<String> interpretEvidence(ArrayList<double[]> probs) {
-		int arraySize = probs.size();
-		ArrayList<String> predictions = new ArrayList<String>(arraySize);
-		for (int i = 0; i < arraySize; ++i) {
-			predictions.add("none");
-		}
-	
-		for (int i = 0; i < arraySize; ++i) {
-			double maxprob = 0d;
-			for (int j = 0; j < numGenres; ++j) {
-				if (probs.get(i)[j] > maxprob) {
-					maxprob = probs.get(i)[j];
-					predictions.set(i, genres.get(j));
-				}
-			}
-		}
-		return predictions;
-	}
 }
 
