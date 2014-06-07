@@ -23,8 +23,8 @@ import java.util.ArrayList;
 public class ClassificationResult {
 	
 	ArrayList<String> predictions;
-	double averageMaxProb;
-	double averageGap;
+	public double averageMaxProb;
+	public double averageGap;
 	
 	ClassificationResult(ArrayList<double[]> probabilitiesPerPageAndGenre, 
 			int numGenres, ArrayList<String> genres) {
@@ -55,8 +55,8 @@ public class ClassificationResult {
 			sumOfGaps += gapBetweenTopAndNext;
 		}
 		
-		averageMaxProb = sumOfMaxProbs / numPages;
-		averageGap = sumOfGaps / numPages;
+		this.averageMaxProb = sumOfMaxProbs / numPages;
+		this.averageGap = sumOfGaps / numPages;
 	}
 
 }

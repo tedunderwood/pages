@@ -33,7 +33,7 @@ public class ParallelModel {
 
 	static int NTHREADS = 10;
 	static int NFOLDS = 5;
-	static String ridge = "30";
+	static String ridge = "50";
 	static int featureCount;
 	static int numGenres;
 	static int numInstances;
@@ -43,7 +43,7 @@ public class ParallelModel {
 	static Vocabulary vocabulary;
 
 	public static void main(String[] args) {
-		String sourceKind = "mixedtraining";
+		String sourceKind = "oldtraining";
 		String featureDir = "/Users/tunder/Dropbox/pagedata/" + sourceKind + "/pagefeatures/";
 		String genreDir = "/Users/tunder/Dropbox/pagedata/" + sourceKind + "/genremaps/";
 		String dirToProcess = "/Users/tunder/Dropbox/pagedata/" + sourceKind + "/pagefeatures/";
@@ -52,7 +52,7 @@ public class ParallelModel {
 		boolean crossvalidate = true;
 		
 		if (crossvalidate) {
-			dirForOutput = "/Users/tunder/output/mixedtraining/";
+			dirForOutput = "/Users/tunder/output/oldtraining/";
 		}
 		else {
 			dirForOutput = "/Users/tunder/output/genremaps/";
@@ -203,6 +203,13 @@ public class ParallelModel {
 		}
 		// block until all threads are completed
 		
+		try {
+			System.out.println("Waiting to make sure threads have completed.");
+		    TimeUnit.SECONDS.sleep(100);
+		} catch (InterruptedException e) {
+		    //Handle exception
+		}
+		
 		// write prediction metadata (confidence levels)
 		
 		String outPath = dirForOutput + "/predictionMetadata.tsv";
@@ -212,6 +219,7 @@ public class ParallelModel {
 		int i = 0;
 		for (ClassifyingThread completedClassification : filesToClassify) {
 			metadata[i] = completedClassification.predictionMetadata;
+			i += 1;
 		}
 		metadataWriter.send(metadata);
 		
