@@ -69,8 +69,7 @@ public class ClassifyingThread implements Runnable {
 		writer.send(outlines);
 		
 		this.predictionMetadata = thisFile + "\t" + Double.toString(smoothedResult.averageMaxProb) + "\t" +
-				Double.toString(smoothedResult.averageGap) + "\n";
-		System.out.println(predictionMetadata);
+				Double.toString(smoothedResult.averageGap);
 	}
 	
 }
