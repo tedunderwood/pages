@@ -12,10 +12,13 @@ public class ClassifyingThread implements Runnable {
 	private ArrayList<String> genres;
 	private ArrayList<WekaDriver> classifiers;
 	private MarkovTable markov;
+	private Vocabulary vocabulary;
+	private FeatureNormalizer normalizer;
 	public String predictionMetadata;
 	
 	public ClassifyingThread(String thisFile, String inputDir, String outputDir, int numGenres, 
-			ArrayList<WekaDriver> classifiers, MarkovTable markov, ArrayList<String> genres) {
+			ArrayList<WekaDriver> classifiers, MarkovTable markov, ArrayList<String> genres, 
+			Vocabulary vocabulary, FeatureNormalizer normalizer) {
 		this.thisFile = thisFile;
 		this.inputDir = inputDir;
 		this.outputDir = outputDir;
@@ -23,6 +26,8 @@ public class ClassifyingThread implements Runnable {
 		this.classifiers = classifiers;
 		this.markov = markov;
 		this.genres = genres;
+		this.vocabulary = vocabulary;
+		this.normalizer = normalizer;
 	}
 
 	@Override
@@ -30,7 +35,7 @@ public class ClassifyingThread implements Runnable {
 		ArrayList<String> wrapper = new ArrayList<String>();
 		wrapper.add(thisFile);
 		
-		TrainingCorpus thisVolume = new TrainingCorpus(inputDir, wrapper);
+		TrainingCorpus thisVolume = new TrainingCorpus(inputDir, wrapper, vocabulary, normalizer);
 		int numPoints = thisVolume.numPoints;
 		ArrayList<DataPoint> thesePages = thisVolume.datapoints;
 	

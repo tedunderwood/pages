@@ -16,14 +16,15 @@ public class TrainingCorpus {
 	// Primarily a list of genre labels. It is guaranteed to begin with two dummy genres,
 	// "begin" and "end," which apply to the imaginary pages right before the start of the
 	// volume and right after its end.
-	static HashMap<String, Integer> featureMap;
-	static int featureCount;
-	static ArrayList<String> features;
-	// Note that this list of features is going to be larger than the size of the vocabulary,
-	// because it will include the STRUCTURALFEATURES contained in Global.
-	static ArrayList<Double> stdevOfFeatures;
-	static ArrayList<Double> meansOfFeatures;
-	static Vocabulary vocabulary;
+	HashMap<String, Integer> featureMap;
+//	int featureCount;
+//	static ArrayList<String> features;
+//	// Note that this list of features is going to be larger than the size of the vocabulary,
+//	// because it will include the STRUCTURALFEATURES contained in Global.
+//	ArrayList<Double> stdevOfFeatures;
+//	ArrayList<Double> meansOfFeatures;
+	Vocabulary vocabulary;
+	FeatureNormalizer normalizer;
 
 	public TrainingCorpus(String featurePath, String genrePath, ArrayList<String> trainingVols, Vocabulary vocab) {
 
@@ -99,14 +100,15 @@ public class TrainingCorpus {
 				numPoints += 1;
 			}
 		}
-
-		newNormalizeFeatures(vocabulary, true);
-		// true because this is a training corpus
+		normalizer = new FeatureNormalizer(vocabulary, datapoints);
 		
-		ArrayWriter printMeans = new ArrayWriter("\t");
-		printMeans.addStringColumn(features, "features");
-		printMeans.addDoubleColumn(meansOfFeatures, "means");
-		printMeans.writeToFile("/Users/tunder/output/featuremeans.tsv");
+		// The normalizer centers all features on the feature mean, and normalizes them by their
+		// standard deviations. Aka, transforms features to z-scores. This is
+		// desirable because I'm using regularized logistic regression, which will
+		// shrink coefficients toward the origin, and shrinkage pressure is
+		// distributed more evenly if the features have been normalized.
+		
+		normalizer.normalizeFeatures(datapoints);
 		
 		System.out.println(genres.genreLabels);
 
@@ -205,8 +207,13 @@ public class TrainingCorpus {
 	 * be added back in the readVolumes method.
 	 *
 	 */
-	public TrainingCorpus(String featurePath, ArrayList<String> volumeLabels) {
-
+	public TrainingCorpus(String featurePath, ArrayList<String> volumeLabels, 
+			Vocabulary vocabulary, FeatureNormalizer normalizer) {
+		
+		this.vocabulary = vocabulary;
+		this.normalizer = normalizer;
+		featureMap = vocabulary.getMap();
+		
 		// In this builder of corpora, we assume a) that we only have
 		// wordcounts and don't yet know the genres and b) a vocabulary
 		// for the model has already been established.
@@ -227,8 +234,10 @@ public class TrainingCorpus {
 		datapoints = thisVol.makePagePoints(featureMap);
 		numPoints = datapoints.size();
 		
-		newNormalizeFeatures(vocabulary, false);
-		// false because this is not a training corpus.
+		normalizer.normalizeFeatures(datapoints);
+		// Note 1) that this method actually mutates the datapoints sent as a parameter,
+		// and 2) that it depends on the existence of a previously constructed
+		// FeatureNormalizer.
 
 	}
 
@@ -241,78 +250,6 @@ public class TrainingCorpus {
 		return genre;
 	}
 	
-	/**
-	 * Centers all features on the feature mean, and normalizes them by their
-	 * standard deviations. Aka, transforms features to z-scores. This is
-	 * desirable because I'm using regularized logistic regression, which will
-	 * shrink coefficients toward the origin, and shrinkage pressure is
-	 * distributed more evenly if the features have been normalized.
-	 * 
-	 * This new version of the method avoids using the means computed in the vocabulary,
-	 * which I do not trust or understand. It also has a flag that determines whether
-	 * we're establishing means and stdevs (trainingCorpus) or using previously
-	 * established normalization (testCorpus).
-	 * 
-	 */
-	
-	private void newNormalizeFeatures(Vocabulary vocabulary, boolean trainingCorpus) {
-		String[] vocabularyArray = vocabulary.vocabularyArray;
-		int vocabSize = vocabularyArray.length;
-		
-		int FEATURESADDED = Global.FEATURESADDED;
-		
-		if (trainingCorpus) {
-			features = new ArrayList<String>(vocabSize + FEATURESADDED);
-			meansOfFeatures = new ArrayList<Double>(vocabSize + FEATURESADDED);
-			stdevOfFeatures = new ArrayList<Double>(vocabSize + FEATURESADDED);
-			
-			// Create the list of features.
-			
-			for (int i = 0; i < vocabSize; ++i) {
-				features.add(vocabularyArray[i]);
-			}
-			for (String aFeature : Global.STRUCTURALFEATURES) {
-				features.add(aFeature);
-			}
-			
-			// Now get means.
-			for (int i = 0; i < vocabSize + FEATURESADDED; ++i) {
-				double sum = 0d;
-				for (DataPoint aPoint : datapoints) {
-					sum += aPoint.getVector()[i];
-				}
-				meansOfFeatures.add(sum / numPoints);
-			}
-	
-			featureCount = vocabSize + FEATURESADDED;
-			for (int i = 0; i < featureCount; ++i) {
-				stdevOfFeatures.add(0d);
-				for (DataPoint aPoint : datapoints) {
-					double current = stdevOfFeatures.get(i);
-					current = current
-							+ Math.pow((aPoint.vector[i] - meansOfFeatures.get(i)),
-									2);
-					stdevOfFeatures.set(i, current);
-				}
-				// We've summed the variance; now divide by the number of points and
-				// take sqrt to get stdev.
-				stdevOfFeatures.set(i,
-						Math.sqrt(stdevOfFeatures.get(i) / numPoints));
-			}
-		}
-		// End the if statement that runs only when this is a training Corpus.
-
-		double[] vector = new double[featureCount];
-		// now normalize ALL the points!
-		for (DataPoint aPoint : datapoints) {
-			vector = aPoint.vector;
-			for (int i = 0; i < featureCount; ++i) {
-				vector[i] = (vector[i] - meansOfFeatures.get(i))
-						/ stdevOfFeatures.get(i);
-			}
-			aPoint.setVector(vector);
-		}
-	}
 
 	public DataPoint getPoint(int i) {
 		return datapoints.get(i);

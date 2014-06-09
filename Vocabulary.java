@@ -9,7 +9,8 @@ import java.util.HashMap;
  * 
  */
 
-public class Vocabulary {
+public class Vocabulary implements java.io.Serializable {
+	private static final long serialVersionUID = 111L; 
 	public String inputFile;
 	public int vocabularySize;
 	public String[] vocabularyArray;

@@ -143,7 +143,8 @@ public class ParallelModel {
 		System.out.println(numGenres);
 		numInstances = corpus.numPoints;
 		genres = corpus.genres.genreLabels;
-		ArrayList<String> features = TrainingCorpus.features;
+		FeatureNormalizer normalizer = corpus.normalizer;
+		ArrayList<String> features = normalizer.features;
 		
 		ExecutorService executive = Executors.newFixedThreadPool(NTHREADS);
 		ArrayList<TrainingThread> trainingThreads = new ArrayList<TrainingThread>(numGenres);
@@ -186,7 +187,7 @@ public class ParallelModel {
 		
 		for (String thisFile : volsToProcess) {
 			ClassifyingThread fileClassifier = new ClassifyingThread(thisFile, inputDir, dirForOutput, numGenres, 
-					classifiers, markov, genres);
+					classifiers, markov, genres, vocabulary, normalizer);
 			filesToClassify.add(fileClassifier);
 		}
 		
