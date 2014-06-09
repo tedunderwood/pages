@@ -33,7 +33,7 @@ public class ParallelModel {
 
 	static int NTHREADS = 10;
 	static int NFOLDS = 5;
-	static String ridge = "50";
+	static String ridge = "10";
 	static int featureCount;
 	static int numGenres;
 	static int numInstances;
@@ -43,6 +43,15 @@ public class ParallelModel {
 	static Vocabulary vocabulary;
 
 	public static void main(String[] args) {
+		
+		ArgumentParser parser = new ArgumentParser(args);
+		boolean trainingRun = parser.getBoolean("-train");
+		
+		if (trainingRun) {
+			String trainingRootDir = parser.getString("trainingroot");
+			String trainingBranch = parser.getString("trainingbranch");
+		}
+		
 		String sourceKind = "mixedtraining";
 		String featureDir = "/Users/tunder/Dropbox/pagedata/" + sourceKind + "/pagefeatures/";
 		String genreDir = "/Users/tunder/Dropbox/pagedata/" + sourceKind + "/genremaps/";
