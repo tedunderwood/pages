@@ -315,11 +315,14 @@ public class ParallelModel {
 
 	private static void applyModel (Model model, String inputDir, ArrayList<String> volsToProcess, String dirForOutput) {
 		
+		vocabulary = model.vocabulary;
 		MarkovTable markov = model.markov;
 		ArrayList<String> genres = model.genreList.genreLabels;
 		FeatureNormalizer normalizer = model.normalizer;
 		ArrayList<WekaDriver> classifiers = model.classifiers;
 		int numGenres = genres.size();
+		
+		System.out.println("Model loaded. Proceeding to apply it to unknown volumes.");
 		
 		ExecutorService classifierPool = Executors.newFixedThreadPool(NTHREADS);
 		ArrayList<ClassifyingThread> filesToClassify = new ArrayList<ClassifyingThread>(volsToProcess.size());
@@ -336,19 +339,23 @@ public class ParallelModel {
 		
 		classifierPool.shutdown();
 		try {
-			classifierPool.awaitTermination(6000, TimeUnit.SECONDS);
+			classifierPool.awaitTermination(100, TimeUnit.MINUTES);
 		}
 		catch (InterruptedException e) {
 			System.out.println("Helpful error message: Execution was interrupted.");
 		}
 		// block until all threads are completed
 		
+		System.out.println("Classification complete. Now writing metadata (confidence levels.)");
 		
 		// write prediction metadata (confidence levels)
 		
 		String outPath = dirForOutput + "/predictionMetadata.tsv";
+		LineWriter headerWriter = new LineWriter(outPath, false);
+		headerWriter.print("htid\tmaxprob\tgap");
 		
 		LineWriter metadataWriter = new LineWriter(outPath, true);
+		
 		String[] metadata = new String[filesToClassify.size()];
 		int i = 0;
 		for (ClassifyingThread completedClassification : filesToClassify) {
