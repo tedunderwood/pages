@@ -3,7 +3,7 @@
  */
 package pages;
 
-import java.io.File;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
@@ -33,7 +33,7 @@ public class ParallelModel {
 
 	static int NTHREADS = 10;
 	static int NFOLDS = 5;
-	static String ridge = "10";
+	static String ridge = "100";
 	static int featureCount;
 	static int numGenres;
 	static int numInstances;
@@ -44,28 +44,44 @@ public class ParallelModel {
 
 	public static void main(String[] args) {
 		
+		// training rootdir = "/Users/tunder/Dropbox/pagedata/"
+		// 
+		
 		ArgumentParser parser = new ArgumentParser(args);
-		boolean trainingRun = parser.getBoolean("-train");
+		boolean trainingRun = parser.isPresent("-train");
 		
-		if (trainingRun) {
-			String trainingRootDir = parser.getString("trainingroot");
-			String trainingBranch = parser.getString("trainingbranch");
-		}
-		
-		String sourceKind = "mixedtraining";
-		String featureDir = "/Users/tunder/Dropbox/pagedata/" + sourceKind + "/pagefeatures/";
-		String genreDir = "/Users/tunder/Dropbox/pagedata/" + sourceKind + "/genremaps/";
-		String dirToProcess = "/Users/tunder/Dropbox/pagedata/" + sourceKind + "/pagefeatures/";
-		String vocabPath = "/Users/tunder/Dropbox/pagedata/mixedvocabulary.txt";
+		String dirToProcess;
 		String dirForOutput;
-		boolean crossvalidate = true;
+		String vocabPath = "/Users/tunder/Dropbox/pagedata/mixedvocabulary.txt";
 		
-		if (crossvalidate) {
-			dirForOutput = "/Users/tunder/output/mixedtraining/";
+		if (parser.isPresent("-output")) {
+			dirForOutput = parser.getString("-output");
 		}
 		else {
-			dirForOutput = "/Users/tunder/output/genremaps/";
+			dirForOutput = "/Users/tunder/output/" + parser.getString("-tbranch") + "/";
 		}
+		
+		if (trainingRun) {
+			String trainingRootDir = parser.getString("-troot");
+			String trainingBranch = parser.getString("-tbranch");
+			String featureDir = trainingRootDir + trainingBranch + "/pagefeatures/";
+			String genreDir = trainingRootDir + trainingBranch + "/genremaps/";
+			if (parser.isPresent("-self")) dirToProcess = featureDir;
+			else dirToProcess = parser.getString("-toprocess");
+			boolean crossvalidate = parser.isPresent("-cross");
+			boolean serialize = parser.isPresent("-save");
+			if (crossvalidate) serialize = false;
+			
+			trainingRun (vocabPath, featureDir, genreDir, dirToProcess, dirForOutput, crossvalidate, serialize);
+		}
+		else {
+			String modelPath = parser.getString("-model");
+		}
+		
+	}
+	
+	private static void trainingRun (String vocabPath, String featureDir, String genreDir, 
+			String dirToProcess, String dirForOutput, boolean crossvalidate, boolean serialize) {
 		
 		vocabulary = new Vocabulary(vocabPath, 1000, true);
 		// reads in the first 1000 features and adds a catch-all category
@@ -84,6 +100,12 @@ public class ParallelModel {
 		System.out.println("Intersection of " + numVolumes);
 
 		ArrayList<String> filesToProcess = DirectoryList.getStrippedPGTSVs(dirToProcess);
+		
+		String outPath = dirForOutput + "/predictionMetadata.tsv";
+		LineWriter metadataWriter = new LineWriter(outPath, false);
+		metadataWriter.print("htid\tmaxprob\tgap");
+		// Create header for predictionMetadata file, overwriting any
+		// previous file.
 		
 		if (crossvalidate) {
 			// Our approach to crossvalidation is simply to divide the volumes into N sublists (folds) and run
@@ -106,7 +128,7 @@ public class ParallelModel {
 				ArrayList<String> trainingSet = partition.volumesExcluding(i);
 				ArrayList<String> testSet = partition.volumesInFold(i);
 				GenreList newGenreList = trainAndClassify(trainingSet, featureDir, genreDir, 
-						dirToProcess, testSet, dirForOutput);
+						dirToProcess, testSet, dirForOutput, serialize);
 				
 				if (firstPass) {
 					oldList = newGenreList;
@@ -121,7 +143,7 @@ public class ParallelModel {
 			}
 		}
 		else {
-			trainAndClassify(volumeLabels, featureDir, genreDir, dirToProcess, filesToProcess, dirForOutput);
+			trainAndClassify(volumeLabels, featureDir, genreDir, dirToProcess, filesToProcess, dirForOutput, serialize);
 		}
 	
 		System.out.println("DONE.");
@@ -143,7 +165,7 @@ public class ParallelModel {
 	 *                         will be written out.
 	 */
 	private static GenreList trainAndClassify(ArrayList<String> trainingVols, String featureDir, String genreDir, 
-			String inputDir, ArrayList<String> volsToProcess, String dirForOutput) {
+			String inputDir, ArrayList<String> volsToProcess, String dirForOutput, boolean serialize) {
 		
 		Model model = trainModel(trainingVols, featureDir, genreDir);
 		
@@ -188,9 +210,22 @@ public class ParallelModel {
 			metadata[i] = completedClassification.predictionMetadata;
 			i += 1;
 		}
-		metadataWriter.print("htid\tmaxprob\tgap\n");
 		metadataWriter.send(metadata);
 		
+		if (serialize) {
+			 try {
+		         FileOutputStream fileOut =
+		         new FileOutputStream(dirForOutput + "/Model.ser");
+		         ObjectOutputStream out = new ObjectOutputStream(fileOut);
+		         out.writeObject(model);
+		         out.close();
+		         fileOut.close();
+		         System.out.printf("Serialized data is saved in " + dirForOutput + "/Model.ser");
+		      }
+			 catch(IOException except) {
+		          except.printStackTrace();
+		      }
+		}
 		return model.genreList;
 	}
 	

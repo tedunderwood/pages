@@ -55,7 +55,16 @@ public class ArgumentParser {
 					System.out.println("Unnamed argument will be ignored: " + thisword);
 				}
 			}
-		}	
+		}
+		
+		// Catch any final name.
+		if (name.length() > 0) namedArguments.put(name, "true");
+		
+		for (HashMap.Entry<String, String> entry : namedArguments.entrySet()) {
+		    String key = entry.getKey();
+		    String value = entry.getValue();
+		    System.out.println(key + " -- " + value);
+		}
 	}
 	
 	public String getString(String key) {
@@ -64,11 +73,20 @@ public class ArgumentParser {
 		return value;
 	}
 	
-	public boolean getBoolean(String key) {
+	/**
+	 * This method checks simply whether a string was included as a name
+	 * in the arguments. This allows it both to check for the presence of
+	 * a named parameter and for a naked name used as a flag. (I.e., set
+	 * equal to "true.")
+	 * 
+	 * @param key String that must have been present as a name in the args.
+	 * @return Boolean value indicating whether the name was present.
+	 */
+	public boolean isPresent(String key) {
 		String value = namedArguments.getOrDefault(key, "null");
-		boolean returnval = false;
+		boolean returnval = true;
 		// This is probably crazy, but I have an aversion to passing actual nulls.
-		if (value.equals("true")) returnval = true;
+		if (value.equals("null")) returnval = false;
 		return returnval;
 	}
 	
