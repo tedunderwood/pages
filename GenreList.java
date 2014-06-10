@@ -2,8 +2,9 @@ package pages;
 
 import java.util.ArrayList;
 
-public class GenreList {
+public class GenreList implements java.io.Serializable {
 	public ArrayList<String> genreLabels;
+	private static final long serialVersionUID = 114L;
 	
 	public GenreList() {
 		genreLabels = new ArrayList<String>();

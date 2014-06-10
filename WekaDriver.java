@@ -15,7 +15,7 @@ import weka.core.Instance;
  * @author tunderwood
  *
  */
-public class WekaDriver {
+public class WekaDriver implements java.io.Serializable {
 	
 	Classifier logistic;
 	Instances trainingSet;
@@ -25,6 +25,7 @@ public class WekaDriver {
 	String ridgeParameter;
 	String classLabel;
 	double[][] memberProbs;
+	private static final long serialVersionUID = 115L;
 	
 	public WekaDriver (String genre) {
 		// Returns a dummy class to fill an unused spot in the ArrayList.

@@ -9,7 +9,7 @@ import java.util.ArrayList;
  * @author tunderwood
  *
  */
-public class MarkovTable {
+public class MarkovTable implements java.io.Serializable {
 	GenreList genres;
 	ArrayList<Integer> unigramFrequencies;
 	ArrayList<ArrayList<Integer>> bigramFrequencies;
@@ -17,6 +17,7 @@ public class MarkovTable {
 	// Columns (second dimension) are the genre of the next.
 	double[][] probabilityMatrix;
 	double lambda;
+	private static final long serialVersionUID = 117L;
 	
 	public MarkovTable (double lambda, GenreList genres) {
 		this.lambda = lambda;

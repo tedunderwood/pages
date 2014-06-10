@@ -145,6 +145,57 @@ public class ParallelModel {
 	private static GenreList trainAndClassify(ArrayList<String> trainingVols, String featureDir, String genreDir, 
 			String inputDir, ArrayList<String> volsToProcess, String dirForOutput) {
 		
+		Model model = trainModel(trainingVols, featureDir, genreDir);
+		
+		MarkovTable markov = model.markov;
+		ArrayList<String> genres = model.genreList.genreLabels;
+		FeatureNormalizer normalizer = model.normalizer;
+		ArrayList<WekaDriver> classifiers = model.classifiers;
+		int numGenres = genres.size();
+		
+		
+		ExecutorService classifierPool = Executors.newFixedThreadPool(NTHREADS);
+		ArrayList<ClassifyingThread> filesToClassify = new ArrayList<ClassifyingThread>(volsToProcess.size());
+		
+		for (String thisFile : volsToProcess) {
+			ClassifyingThread fileClassifier = new ClassifyingThread(thisFile, inputDir, dirForOutput, numGenres, 
+					classifiers, markov, genres, vocabulary, normalizer);
+			filesToClassify.add(fileClassifier);
+		}
+		
+		for (ClassifyingThread fileClassifier: filesToClassify) {
+			classifierPool.execute(fileClassifier);
+		}
+		
+		classifierPool.shutdown();
+		try {
+			classifierPool.awaitTermination(6000, TimeUnit.SECONDS);
+		}
+		catch (InterruptedException e) {
+			System.out.println("Helpful error message: Execution was interrupted.");
+		}
+		// block until all threads are completed
+		
+		
+		// write prediction metadata (confidence levels)
+		
+		String outPath = dirForOutput + "/predictionMetadata.tsv";
+		
+		LineWriter metadataWriter = new LineWriter(outPath, true);
+		String[] metadata = new String[filesToClassify.size()];
+		int i = 0;
+		for (ClassifyingThread completedClassification : filesToClassify) {
+			metadata[i] = completedClassification.predictionMetadata;
+			i += 1;
+		}
+		metadataWriter.print("htid\tmaxprob\tgap\n");
+		metadataWriter.send(metadata);
+		
+		return model.genreList;
+	}
+	
+	private static Model trainModel(ArrayList<String> trainingVols, String featureDir, String genreDir) {
+		
 		featureCount = vocabulary.vocabularySize;
 		System.out.println(featureCount + " features.");
 		TrainingCorpus corpus = new TrainingCorpus(featureDir, genreDir, trainingVols, vocabulary);
@@ -191,43 +242,8 @@ public class ParallelModel {
 			
 		MarkovTable markov = corpus.makeMarkovTable(trainingVols, MARKOVSMOOTHING);
 		
-		ExecutorService classifierPool = Executors.newFixedThreadPool(NTHREADS);
-		ArrayList<ClassifyingThread> filesToClassify = new ArrayList<ClassifyingThread>(volsToProcess.size());
-		
-		for (String thisFile : volsToProcess) {
-			ClassifyingThread fileClassifier = new ClassifyingThread(thisFile, inputDir, dirForOutput, numGenres, 
-					classifiers, markov, genres, vocabulary, normalizer);
-			filesToClassify.add(fileClassifier);
-		}
-		
-		for (ClassifyingThread fileClassifier: filesToClassify) {
-			classifierPool.execute(fileClassifier);
-		}
-		
-		classifierPool.shutdown();
-		try {
-			classifierPool.awaitTermination(6000, TimeUnit.SECONDS);
-		}
-		catch (InterruptedException e) {
-			System.out.println("Helpful error message: Execution was interrupted.");
-		}
-		// block until all threads are completed
-		
-		
-		// write prediction metadata (confidence levels)
-		
-		String outPath = dirForOutput + "/predictionMetadata.tsv";
-		
-		LineWriter metadataWriter = new LineWriter(outPath, true);
-		String[] metadata = new String[filesToClassify.size()];
-		int i = 0;
-		for (ClassifyingThread completedClassification : filesToClassify) {
-			metadata[i] = completedClassification.predictionMetadata;
-			i += 1;
-		}
-		metadataWriter.send(metadata);
-		
-		return corpus.genres;
+		Model model = new Model(vocabulary, normalizer, corpus.genres, classifiers, markov);
+		return model;
 	}
 
 
