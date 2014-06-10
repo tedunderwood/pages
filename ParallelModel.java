@@ -59,11 +59,7 @@ public class ParallelModel {
 			dirForOutput = "/Volumes/TARDIS/output/" + parser.getString("-tbranch") + "/";
 		}
 		
-		File outputCheck = new File(dirForOutput);
-		if (!outputCheck.isDirectory()) {
-			System.out.println("This run is going to fail, because the output directory doesn't exist.");
-			System.exit(0);
-		}
+		dirForOutput = validateDirectory(dirForOutput, "output");
 		
 		if (parser.isPresent("-nthreads")) {
 			NTHREADS = Integer.parseInt(parser.getString("-nthreads"));
@@ -79,11 +75,21 @@ public class ParallelModel {
 		
 		if (trainingRun) {
 			String trainingRootDir = parser.getString("-troot");
+			trainingRootDir = validateDirectory(trainingRootDir, "training root");
+			
 			String trainingBranch = parser.getString("-tbranch");
+			if (trainingBranch.startsWith("/") | trainingBranch.startsWith("/")) {
+				System.out.println("The -tbranch parameter should not include slashes.");
+				trainingBranch = trainingBranch.replace("/",  "");
+			}
+			
 			String featureDir = trainingRootDir + trainingBranch + "/pagefeatures/";
 			String genreDir = trainingRootDir + trainingBranch + "/genremaps/";
+			
 			if (parser.isPresent("-self")) dirToProcess = featureDir;
 			else dirToProcess = parser.getString("-toprocess");
+			dirToProcess = validateDirectory(dirToProcess, "input");
+			
 			boolean crossvalidate = parser.isPresent("-cross");
 			boolean serialize = parser.isPresent("-save");
 			if (crossvalidate) serialize = false;
@@ -496,5 +502,23 @@ public class ParallelModel {
 			dirtyHtids = null;
 		}
 		return dirtyHtids;
+	}
+	
+	/**
+	 * We expect directories to exist, and we expect them to end with a slash "/."
+	 * This method ensures both things are true.
+	 * 
+	 * @param dir Directory to validate.
+	 * @param description To use in error message.
+	 * @return A directory that ends with a slash.
+	 */
+	private static String validateDirectory(String dir, String description) {
+		File outputCheck = new File(dir);
+		if (!outputCheck.isDirectory()) {
+			System.out.println("This run is going to fail, because the " + description + " directory doesn't exist.");
+			System.exit(0);
+		}
+		if (!dir.endsWith("/")) dir = dir + "/";
+		return dir;
 	}
 }

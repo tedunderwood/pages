@@ -28,7 +28,6 @@ public class PairtreeReader {
 	
 	public ArrayList<String> getVolume(String dirtyID) {
 		String path = getPairtreePath(dirtyID);
-		System.out.println(path);
 		LineReader reader = new LineReader(path);
 		ArrayList<String> filelines = new ArrayList<String>();
 		

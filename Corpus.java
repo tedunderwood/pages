@@ -284,7 +284,6 @@ public class Corpus {
 		PairtreeReader reader = new PairtreeReader(rootPath, pairtree);
 		
 		ArrayList<String> filelines = reader.getVolume(dirtyHtid);
-		System.out.println(dirtyHtid + "has lines " + Integer.toString(filelines.size()));
 		
 		for (String line : filelines) {
 			String[] tokens = line.split("\t");
