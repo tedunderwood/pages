@@ -43,13 +43,43 @@ public class ParallelModel {
 	static final double MARKOVSMOOTHING = .0001d;
 	static Vocabulary vocabulary;
 
+	/**
+	 * Main method: mostly argument-parsing.
+	 * 
+	 * @param args 	Options set at the command line.
+	 * -train			Include if a model is to be trained; otherwise we expect
+	 * -model (path)	Path to a previously-trained model.
+	 * -output (dir)	Directory for all output.
+	 * -troot (dir)		Directory for training data; needs to include subdirectories
+	 * 					/pagefeatures and /genremaps.
+	 * -tbranch (dirpt)	If specified, defines a subdirectory of -troot for training data.
+	 * -toprocess (dir)	Directory of files to be classified. Not needed if you specify
+	 * -self			Which implies that training/pagefeatures will be classified.
+	 * -cross (int)		Number of crossvalidation folds; e.g., five-fold. The int parameter
+	 * 					is optional. Default 5.
+	 * -save			Model will be saved to output directory. We don't save multiple cross-
+	 * 					validation models, so incompatible with -cross.
+	 * -local			Indicates that the model will be applied to a local directory. Otherwise we expect
+	 * -pairtreeroot (dir)	The root of a pairtree hierarchy, and
+	 * -slice (path)		Path to a file containing dirty HathiTrust ids that imply pairtree paths to vols.
+	 * -nthreads (int)	Number of threads to run in parallel. Default 10.
+	 * -ridge (double)	Ridge parameter for regularizing logistic regression.		
+	 */
 	public static void main(String[] args) {
 		WarningLogger.initializeLogger(true, "/Users/tunder/output/warninglog.txt");
+		
+		// We send command-line arguments to a parser and then query the parser
+		// to find whether certain options are present, and what values are assigned
+		// to them.
+		
 		ArgumentParser parser = new ArgumentParser(args);
 		boolean trainingRun = parser.isPresent("-train");
+		// The most important option defines whether this is a training run.
 		
 		String dirToProcess;
 		String dirForOutput;
+		String featureDir;
+		String genreDir;
 		String vocabPath = "/Users/tunder/Dropbox/pagedata/mixedvocabulary.txt";
 		
 		if (parser.isPresent("-output")) {
@@ -62,11 +92,7 @@ public class ParallelModel {
 		dirForOutput = validateDirectory(dirForOutput, "output");
 		
 		if (parser.isPresent("-nthreads")) {
-			NTHREADS = Integer.parseInt(parser.getString("-nthreads"));
-		}
-	
-		if (parser.isPresent("-nfolds")) {
-			NFOLDS = Integer.parseInt(parser.getString("-nfolds"));
+			NTHREADS = parser.getInteger("-nthreads");
 		}
 		
 		if (parser.isPresent("-ridge")) {
@@ -77,20 +103,31 @@ public class ParallelModel {
 			String trainingRootDir = parser.getString("-troot");
 			trainingRootDir = validateDirectory(trainingRootDir, "training root");
 			
-			String trainingBranch = parser.getString("-tbranch");
-			if (trainingBranch.startsWith("/") | trainingBranch.startsWith("/")) {
-				System.out.println("The -tbranch parameter should not include slashes.");
-				trainingBranch = trainingBranch.replace("/",  "");
+			if (parser.isPresent("-tbranch")) {
+				String trainingBranch = parser.getString("-tbranch");
+				if (trainingBranch.startsWith("/") | trainingBranch.startsWith("/")) {
+					System.out.println("The -tbranch parameter should not include slashes.");
+					trainingBranch = trainingBranch.replace("/",  "");
+				}
+				
+				featureDir = trainingRootDir + trainingBranch + "/pagefeatures/";
+				genreDir = trainingRootDir + trainingBranch + "/genremaps/";
 			}
-			
-			String featureDir = trainingRootDir + trainingBranch + "/pagefeatures/";
-			String genreDir = trainingRootDir + trainingBranch + "/genremaps/";
+			else {
+				featureDir = trainingRootDir + "pagefeatures/";
+				genreDir = trainingRootDir + "genremaps/";
+			}
 			
 			if (parser.isPresent("-self")) dirToProcess = featureDir;
 			else dirToProcess = parser.getString("-toprocess");
 			dirToProcess = validateDirectory(dirToProcess, "input");
 			
 			boolean crossvalidate = parser.isPresent("-cross");
+			if (crossvalidate) {
+				if (parser.getInteger("-cross") > 0) {
+					NFOLDS = parser.getInteger("-cross");
+				}
+			}
 			boolean serialize = parser.isPresent("-save");
 			if (crossvalidate) serialize = false;
 			

@@ -82,7 +82,7 @@ public class ArgumentParser {
 	 * @param key String that must have been present as a name in the args.
 	 * @return Boolean value indicating whether the name was present.
 	 */
-	public boolean isPresent(String key) {
+	public boolean isPresent (String key) {
 		String value = namedArguments.getOrDefault(key, "null");
 		boolean returnval = true;
 		// This is probably crazy, but I have an aversion to passing actual nulls.
@@ -90,6 +90,23 @@ public class ArgumentParser {
 		return returnval;
 	}
 	
-	
+	public int getInteger (String key) {
+		int returnval;
+		String value = namedArguments.getOrDefault(key, "null");
+		if (value.equals("null") | value.equals("true")) {
+			return 0;
+			// we return 0 if no parameter was attached to the option
+		}
+		else {
+			try {
+				returnval = Integer.parseInt(value);
+			}
+			catch (Exception e) {
+				System.out.println("The value assigned to option " + key + "does not parse as an integer.");
+				returnval = 0;
+			}
+			return returnval;
+		}
+	}
 
 }
