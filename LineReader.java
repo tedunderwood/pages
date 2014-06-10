@@ -2,6 +2,7 @@ package pages;
 
 import java.io.*;
 import java.util.Vector;
+import java.util.ArrayList;
 
 public class LineReader {
 	File fileName;
@@ -39,6 +40,30 @@ public String[] readlines() {
 		String[] lineArray = new String[1];
 		lineArray[0] = null;
 		return lineArray;
+	}
+}
+
+public ArrayList<String> readList() throws InputFileException {
+	
+	ArrayList<String> holding = new ArrayList<String>(1000);
+	try{
+		BufferedReader filein = new BufferedReader(
+				new InputStreamReader(
+		                  new FileInputStream(fileName), "UTF8"));
+		try{
+			while (filein.ready()){
+				String line = filein.readLine();
+				holding.add(line);
+			}
+		}
+		finally {
+			filein.close();
+		}
+		return holding;
+	}
+	catch (IOException e) {
+		InputFileException problem = new InputFileException("IOException in LineReader: " + e);
+		throw problem;
 	}
 }
 

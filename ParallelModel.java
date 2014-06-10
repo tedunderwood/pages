@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  * @param NFOLDS       Number of folds to create if crossvalidating. E.g., tenfold.
  * @param NTHREADS     Number of threads to parallelize across; the same number is used
  *                     for parallelizing training and classification.
- * @param ridge        The ridge parameter for regularizing logistic regression.
+ * @param RIDGE        The ridge parameter for regularizing logistic regression.
  * @param featureCount The number of features in the model. This will be greater than
  *                     the number of words in the vocabulary, because it also includes
  *                     structural features.
@@ -33,7 +33,8 @@ public class ParallelModel {
 
 	static int NTHREADS = 10;
 	static int NFOLDS = 5;
-	static String ridge = "60";
+	static int minutesToWait = 30;
+	static String RIDGE = "60";
 	static int featureCount;
 	static int numGenres;
 	static int numInstances;
@@ -43,9 +44,6 @@ public class ParallelModel {
 	static Vocabulary vocabulary;
 
 	public static void main(String[] args) {
-		
-		// training rootdir = "/Users/tunder/Dropbox/pagedata/"
-		// 
 		
 		ArgumentParser parser = new ArgumentParser(args);
 		boolean trainingRun = parser.isPresent("-train");
@@ -58,7 +56,25 @@ public class ParallelModel {
 			dirForOutput = parser.getString("-output");
 		}
 		else {
-			dirForOutput = "/Users/tunder/output/" + parser.getString("-tbranch") + "/";
+			dirForOutput = "/Volumes/TARDIS/output/" + parser.getString("-tbranch") + "/";
+		}
+		
+		File outputCheck = new File(dirForOutput);
+		if (!outputCheck.isDirectory()) {
+			System.out.println("This run is going to fail, because the output directory doesn't exist.");
+			System.exit(0);
+		}
+		
+		if (parser.isPresent("-nthreads")) {
+			NTHREADS = Integer.parseInt(parser.getString("-nthreads"));
+		}
+	
+		if (parser.isPresent("-nfolds")) {
+			NFOLDS = Integer.parseInt(parser.getString("-nfolds"));
+		}
+		
+		if (parser.isPresent("-ridge")) {
+			RIDGE = parser.getString("-ridge");
 		}
 		
 		if (trainingRun) {
@@ -81,7 +97,25 @@ public class ParallelModel {
 				ArrayList<String> volsToProcess = DirectoryList.getStrippedPGTSVs(dirToProcess);
 				String modelPath = parser.getString("-model");
 				Model model = deserializeModel(modelPath);
-				applyModel(model, dirToProcess, volsToProcess, dirForOutput);
+				applyModel(model, dirToProcess, volsToProcess, dirForOutput, false);
+				// The final argument == false because this is not a pairtree process.
+			}
+			else {
+				// We infer that this model is going to be applied to volumes in a pairtree structure.
+				
+				String slicePath = parser.getString("-slice");
+				// The path to a list of dirty HTIDs specifying volume locations.
+				ArrayList<String> dirtyHtids = getSlice(slicePath);
+				dirToProcess = parser.getString("-pairtreeroot");
+				
+				minutesToWait = 500;
+				// If this is being run on a pairtree, it's probably quite a large workset.
+				
+				String modelPath = parser.getString("-model");
+				Model model = deserializeModel(modelPath);
+				
+				applyModel(model, dirToProcess, dirtyHtids, dirForOutput, true);
+				// The final argument == true because this is a pairtree process.
 			}
 		}
 		
@@ -162,7 +196,7 @@ public class ParallelModel {
 	}
 	
 	/**
-	 * This is the workhorse method for this whole package. It trains a model on a given set
+	 * This is a workhorse method for this package. It trains a model on a given set
 	 * of volumes and applies it to another set of volumes. Those sets can be identical, or
 	 * can be disjunct (e.g. in crossvalidation).
 	 * 
@@ -192,7 +226,9 @@ public class ParallelModel {
 		
 		for (String thisFile : volsToProcess) {
 			ClassifyingThread fileClassifier = new ClassifyingThread(thisFile, inputDir, dirForOutput, numGenres, 
-					classifiers, markov, genres, vocabulary, normalizer);
+					classifiers, markov, genres, vocabulary, normalizer, false);
+			// The final parameter == false because this will never be run in a pairtree context.
+			
 			filesToClassify.add(fileClassifier);
 		}
 		
@@ -244,7 +280,7 @@ public class ParallelModel {
 		
 		featureCount = vocabulary.vocabularySize;
 		System.out.println(featureCount + " features.");
-		TrainingCorpus corpus = new TrainingCorpus(featureDir, genreDir, trainingVols, vocabulary);
+		Corpus corpus = new Corpus(featureDir, genreDir, trainingVols, vocabulary);
 		numGenres = corpus.genres.getSize();
 		System.out.println(numGenres);
 		numInstances = corpus.numPoints;
@@ -262,7 +298,7 @@ public class ParallelModel {
 			// The first two genres are dummy genres for the front and back of the volume. So we don't actually train classifiers
 			// for them. The trainingThread class knows to return a dummy classifier when aGenre.equals("dummy").
 			
-			TrainingThread trainClassifier = new TrainingThread(corpus.genres, features, aGenre, corpus.datapoints, ridge, true);
+			TrainingThread trainClassifier = new TrainingThread(corpus.genres, features, aGenre, corpus.datapoints, RIDGE, true);
 			trainingThreads.add(trainClassifier);
 		}
 		
@@ -313,7 +349,22 @@ public class ParallelModel {
 	   return m;
 	}
 
-	private static void applyModel (Model model, String inputDir, ArrayList<String> volsToProcess, String dirForOutput) {
+	/**
+	 * Takes a previously-trained model and applies it to a new set of volumes.
+	 * 
+	 * @param model A wrapper for a set of classes that define the model.
+	 * @param inputDir This can either be a directory that contains files, or the
+	 * root directory of a pairtree structure.
+	 * @param volsToProcess This is a list of file IDs. If this is being run on a local
+	 * directory, these will be 'clean' volume IDs that can be used as filenames. If this is
+	 * run on a pairtree, these will be 'dirty' volume IDs specifying a path to each file.
+	 * @param dirForOutput Where to write results.
+	 * @param isPairtree Boolean flag to tell us whether this is a pairtree run. It gets passed to
+	 * the ClassifyingThread, which can invoke two different Corpus constructors depending on the
+	 * underlying data source being used.
+	 */
+	private static void applyModel (Model model, String inputDir, ArrayList<String> volsToProcess, 
+			String dirForOutput, boolean isPairtree) {
 		
 		vocabulary = model.vocabulary;
 		MarkovTable markov = model.markov;
@@ -329,7 +380,7 @@ public class ParallelModel {
 		
 		for (String thisFile : volsToProcess) {
 			ClassifyingThread fileClassifier = new ClassifyingThread(thisFile, inputDir, dirForOutput, numGenres, 
-					classifiers, markov, genres, vocabulary, normalizer);
+					classifiers, markov, genres, vocabulary, normalizer, isPairtree);
 			filesToClassify.add(fileClassifier);
 		}
 		
@@ -339,7 +390,7 @@ public class ParallelModel {
 		
 		classifierPool.shutdown();
 		try {
-			classifierPool.awaitTermination(100, TimeUnit.MINUTES);
+			classifierPool.awaitTermination(minutesToWait, TimeUnit.MINUTES);
 		}
 		catch (InterruptedException e) {
 			System.out.println("Helpful error message: Execution was interrupted.");
@@ -434,4 +485,16 @@ public class ParallelModel {
 		return hathiIDs;
 	}
 
+	private static ArrayList<String> getSlice(String slicePath) {
+		ArrayList<String> dirtyHtids;
+		LineReader getHtids = new LineReader(slicePath);
+		try {
+			dirtyHtids = getHtids.readList();
+		}
+		catch (InputFileException e) {
+			System.out.println("Missing slice file: " + slicePath);
+			dirtyHtids = null;
+		}
+		return dirtyHtids;
+	}
 }
