@@ -21,13 +21,14 @@ public class PairtreeReader {
 		// everything after the period
 		String ppath = pairtree.mapToPPath(pathPart);
 		String encapsulatingDirectory = pairtree.cleanId(pathPart);
-		String wholePath = dataPath + "/" + prefix + "/pairtree_root/" + ppath + "/"+ encapsulatingDirectory + 
-				"/" + encapsulatingDirectory + "pg.tsv";
+		String wholePath = dataPath + prefix + "/pairtree_root/" + ppath + "/"+ encapsulatingDirectory + 
+				"/" + encapsulatingDirectory + ".pg.tsv";
 		return wholePath;
 	}
 	
 	public ArrayList<String> getVolume(String dirtyID) {
 		String path = getPairtreePath(dirtyID);
+		System.out.println(path);
 		LineReader reader = new LineReader(path);
 		ArrayList<String> filelines = new ArrayList<String>();
 		

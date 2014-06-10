@@ -44,7 +44,7 @@ public class ParallelModel {
 	static Vocabulary vocabulary;
 
 	public static void main(String[] args) {
-		
+		WarningLogger.initializeLogger(true, "/Users/tunder/output/warninglog.txt");
 		ArgumentParser parser = new ArgumentParser(args);
 		boolean trainingRun = parser.isPresent("-train");
 		
