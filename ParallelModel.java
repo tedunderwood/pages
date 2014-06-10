@@ -33,7 +33,7 @@ public class ParallelModel {
 
 	static int NTHREADS = 10;
 	static int NFOLDS = 5;
-	static String ridge = "100";
+	static String ridge = "60";
 	static int featureCount;
 	static int numGenres;
 	static int numInstances;
@@ -220,7 +220,7 @@ public class ParallelModel {
 		         out.writeObject(model);
 		         out.close();
 		         fileOut.close();
-		         System.out.printf("Serialized data is saved in " + dirForOutput + "/Model.ser");
+		         System.out.printf("Serialized data is saved in " + dirForOutput + "/Model.ser\n");
 		      }
 			 catch(IOException except) {
 		          except.printStackTrace();
