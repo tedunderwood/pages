@@ -75,7 +75,14 @@ public class ParallelModel {
 			trainingRun (vocabPath, featureDir, genreDir, dirToProcess, dirForOutput, crossvalidate, serialize);
 		}
 		else {
-			String modelPath = parser.getString("-model");
+			boolean local = parser.isPresent("-local");
+			if (local) {
+				dirToProcess = parser.getString("-toprocess");
+				ArrayList<String> volsToProcess = DirectoryList.getStrippedPGTSVs(dirToProcess);
+				String modelPath = parser.getString("-model");
+				Model model = deserializeModel(modelPath);
+				applyModel(model, dirToProcess, volsToProcess, dirForOutput);
+			}
 		}
 		
 	}
@@ -127,8 +134,13 @@ public class ParallelModel {
 				System.out.println("Iteration: " + Integer.toString(i));
 				ArrayList<String> trainingSet = partition.volumesExcluding(i);
 				ArrayList<String> testSet = partition.volumesInFold(i);
+				
 				GenreList newGenreList = trainAndClassify(trainingSet, featureDir, genreDir, 
 						dirToProcess, testSet, dirForOutput, serialize);
+				// The important outputs of trainAndClassify are obviously, the genre 
+				// predictions that get written to file inside the methof. But the method also 
+				// returns a GenreList, which allows us to check that all genres are 
+				// represented in each pass of crossvalidation.
 				
 				if (firstPass) {
 					oldList = newGenreList;
@@ -164,7 +176,7 @@ public class ParallelModel {
 	 * @param dirForOutput     Self-explanatory. This is where the .map files that result from classification
 	 *                         will be written out.
 	 */
-	private static GenreList trainAndClassify(ArrayList<String> trainingVols, String featureDir, String genreDir, 
+	private static GenreList trainAndClassify (ArrayList<String> trainingVols, String featureDir, String genreDir, 
 			String inputDir, ArrayList<String> volsToProcess, String dirForOutput, boolean serialize) {
 		
 		Model model = trainModel(trainingVols, featureDir, genreDir);
@@ -174,7 +186,6 @@ public class ParallelModel {
 		FeatureNormalizer normalizer = model.normalizer;
 		ArrayList<WekaDriver> classifiers = model.classifiers;
 		int numGenres = genres.size();
-		
 		
 		ExecutorService classifierPool = Executors.newFixedThreadPool(NTHREADS);
 		ArrayList<ClassifyingThread> filesToClassify = new ArrayList<ClassifyingThread>(volsToProcess.size());
@@ -229,7 +240,7 @@ public class ParallelModel {
 		return model.genreList;
 	}
 	
-	private static Model trainModel(ArrayList<String> trainingVols, String featureDir, String genreDir) {
+	private static Model trainModel (ArrayList<String> trainingVols, String featureDir, String genreDir) {
 		
 		featureCount = vocabulary.vocabularySize;
 		System.out.println(featureCount + " features.");
@@ -280,9 +291,74 @@ public class ParallelModel {
 		Model model = new Model(vocabulary, normalizer, corpus.genres, classifiers, markov);
 		return model;
 	}
+	
+	private static Model deserializeModel (String modelPath) {
+		Model m = null;
+	    try {
+	    	FileInputStream fileIn = new FileInputStream(modelPath);
+	        ObjectInputStream in = new ObjectInputStream(fileIn);
+	        m = (Model) in.readObject();
+	        in.close();
+	        fileIn.close();
+	      }
+	    catch(IOException except) {
+	         except.printStackTrace();
+	         return m;
+	      }
+	    catch(ClassNotFoundException c) {
+	         System.out.println("Employee class not found");
+	         c.printStackTrace();
+	         return m;
+	      }
+	   return m;
+	}
 
-
-	public static boolean genresAreEqual(String predictedGenre,
+	private static void applyModel (Model model, String inputDir, ArrayList<String> volsToProcess, String dirForOutput) {
+		
+		MarkovTable markov = model.markov;
+		ArrayList<String> genres = model.genreList.genreLabels;
+		FeatureNormalizer normalizer = model.normalizer;
+		ArrayList<WekaDriver> classifiers = model.classifiers;
+		int numGenres = genres.size();
+		
+		ExecutorService classifierPool = Executors.newFixedThreadPool(NTHREADS);
+		ArrayList<ClassifyingThread> filesToClassify = new ArrayList<ClassifyingThread>(volsToProcess.size());
+		
+		for (String thisFile : volsToProcess) {
+			ClassifyingThread fileClassifier = new ClassifyingThread(thisFile, inputDir, dirForOutput, numGenres, 
+					classifiers, markov, genres, vocabulary, normalizer);
+			filesToClassify.add(fileClassifier);
+		}
+		
+		for (ClassifyingThread fileClassifier: filesToClassify) {
+			classifierPool.execute(fileClassifier);
+		}
+		
+		classifierPool.shutdown();
+		try {
+			classifierPool.awaitTermination(6000, TimeUnit.SECONDS);
+		}
+		catch (InterruptedException e) {
+			System.out.println("Helpful error message: Execution was interrupted.");
+		}
+		// block until all threads are completed
+		
+		
+		// write prediction metadata (confidence levels)
+		
+		String outPath = dirForOutput + "/predictionMetadata.tsv";
+		
+		LineWriter metadataWriter = new LineWriter(outPath, true);
+		String[] metadata = new String[filesToClassify.size()];
+		int i = 0;
+		for (ClassifyingThread completedClassification : filesToClassify) {
+			metadata[i] = completedClassification.predictionMetadata;
+			i += 1;
+		}
+		metadataWriter.send(metadata);
+	}
+	
+	public static boolean genresAreEqual (String predictedGenre,
 			String targetGenre) {
 		if (predictedGenre.equals(targetGenre)) {
 			return true;
