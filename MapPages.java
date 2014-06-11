@@ -54,7 +54,7 @@ public class MapPages {
 	 * -output (dir)	Directory for all output.
 	 * -troot (dir)		Directory for training data; needs to include subdirectories
 	 * 					/pagefeatures and /genremaps.
-	 * -tbranch (dirpt)	If specified, defines a subdirectory of -troot for training data.
+	 * -tbranch (subdir)	If specified, defines a subdirectory of -troot for training data.
 	 * -toprocess (dir)	Directory of files to be classified. Not needed if you specify
 	 * -self			Which implies that training/pagefeatures will be classified.
 	 * -cross (int)		Number of crossvalidation folds; e.g., five-fold. The int parameter

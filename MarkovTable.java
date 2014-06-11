@@ -143,7 +143,6 @@ public class MarkovTable implements java.io.Serializable {
 			}
 			probabilityMatrix[i] = proportions;
 		}
-		IOUtils.writeTSV(probabilityMatrix, "/Users/tunder/output/markov2.tsv", 4);
 	}
 	
 	public double[] transitionProbs(int genre) {
