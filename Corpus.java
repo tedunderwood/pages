@@ -257,13 +257,13 @@ public class Corpus {
 	 * static class.
 	 */
 	public Corpus(String rootPath, String dirtyHtid, 
-			Vocabulary vocabulary, FeatureNormalizer normalizer, Pairtree pairtree) {
+			Vocabulary vocabulary, FeatureNormalizer normalizer) {
 		
 		this.vocabulary = vocabulary;
 		this.normalizer = normalizer;
 		featureMap = vocabulary.getMap();
 		
-		Volume thisVol = readAVolumeFromPairtree(rootPath, dirtyHtid, featureMap, pairtree);
+		Volume thisVol = readAVolumeFromPairtree(rootPath, dirtyHtid, featureMap);
 
 		// We're producing page points.
 		
@@ -277,11 +277,11 @@ public class Corpus {
 	}
 	
 	private Volume readAVolumeFromPairtree(String rootPath, String dirtyHtid,
-			HashMap<String, Integer> featureMap, Pairtree pairtree) {
+			HashMap<String, Integer> featureMap) {
 		
-		String cleanHtid = pairtree.cleanId(dirtyHtid); 
+		String cleanHtid = PairtreeReader.cleanID(dirtyHtid); 
 		Volume thisVol = new Volume(cleanHtid);
-		PairtreeReader reader = new PairtreeReader(rootPath, pairtree);
+		PairtreeReader reader = new PairtreeReader(rootPath);
 		
 		ArrayList<String> filelines = reader.getVolume(dirtyHtid);
 		

@@ -68,7 +68,7 @@ public class MapPages {
 	 * -ridge (double)	Ridge parameter for regularizing logistic regression.		
 	 */
 	public static void main(String[] args) {
-		WarningLogger.initializeLogger(true, "/Users/tunder/output/warninglog.txt");
+		WarningLogger.initializeLogger(true, "/home/tunder/java/genre/warninglog.txt");
 		
 		// We send command-line arguments to a parser and then query the parser
 		// to find whether certain options are present, and what values are assigned
@@ -424,6 +424,8 @@ public class MapPages {
 		ArrayList<ClassifyingThread> filesToClassify = new ArrayList<ClassifyingThread>(volsToProcess.size());
 		
 		for (String thisFile : volsToProcess) {
+			thisFile = PairtreeReader.cleanID(thisFile);
+			// because they may have been passed in as dirty HathiTrust IDs with slashes and colons
 			ClassifyingThread fileClassifier = new ClassifyingThread(thisFile, inputDir, dirForOutput, numGenres, 
 					classifiers, markov, genres, vocabulary, normalizer, isPairtree);
 			filesToClassify.add(fileClassifier);

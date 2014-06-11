@@ -40,8 +40,7 @@ public class ClassifyingThread implements Runnable {
 		
 		Corpus thisVolume;
 		if (isPairtree) {
-			Pairtree pairtree = new Pairtree();
-			thisVolume = new Corpus(inputDir, thisFile, vocabulary, normalizer, pairtree);
+			thisVolume = new Corpus(inputDir, thisFile, vocabulary, normalizer);
 		}
 		else {
 			ArrayList<String> wrapper = new ArrayList<String>();

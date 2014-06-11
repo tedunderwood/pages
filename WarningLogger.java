@@ -16,6 +16,8 @@ public final class WarningLogger {
 	public static void initializeLogger(boolean toFile, String filename) {
 		writeToFile = toFile;
 		if (writeToFile) {
+			LineWriter clearFile = new LineWriter(filename, false);
+			clearFile.print("Warning Log:");
 			theWriter = new LineWriter(filename, true);
 		}
 	}
