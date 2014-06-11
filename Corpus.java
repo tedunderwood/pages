@@ -264,16 +264,22 @@ public class Corpus {
 		featureMap = vocabulary.getMap();
 		
 		Volume thisVol = readAVolumeFromPairtree(rootPath, dirtyHtid, featureMap);
+		
+		if (thisVol.totalWords > 1) {
 
-		// We're producing page points.
-		
-		datapoints = thisVol.makePagePoints(featureMap);
-		numPoints = datapoints.size();
-		
-		normalizer.normalizeFeatures(datapoints);
-		// Note 1) that this method actually mutates the datapoints sent as a parameter,
-		// and 2) that it depends on the existence of a previously constructed
-		// FeatureNormalizer.
+			// We're producing page points.
+			datapoints = thisVol.makePagePoints(featureMap);
+			numPoints = datapoints.size();
+			
+			normalizer.normalizeFeatures(datapoints);
+			// Note 1) that this method actually mutates the datapoints sent as a parameter,
+			// and 2) that it depends on the existence of a previously constructed
+			// FeatureNormalizer.
+		}
+		else {
+			numPoints = 0;
+			// This will be caught at a higher level so we don't attempt to classify an empty volume.
+		}
 	}
 	
 	private Volume readAVolumeFromPairtree(String rootPath, String dirtyHtid,

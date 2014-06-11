@@ -49,44 +49,50 @@ public class ClassifyingThread implements Runnable {
 		}
 		
 		int numPoints = thisVolume.numPoints;
-		ArrayList<DataPoint> thesePages = thisVolume.datapoints;
-	
-		ArrayList<double[]> rawProbs = new ArrayList<double[]>(numPoints);
-		for (int i = 0; i < numPoints; ++i) {
-			double[] probs = new double[numGenres];
-			Arrays.fill(probs, 0);
-			rawProbs.add(probs);
-		}
 		
-		for (int i = 2; i < numGenres; ++i) {
-			WekaDriver classify = classifiers.get(i);
-			double[][] probs = classify.testNewInstances(thesePages);
-			for (int j = 0; j < numPoints; ++j) {
-				rawProbs.get(j)[i] = probs[j][0];
+		if (numPoints > 0) {
+			ArrayList<DataPoint> thesePages = thisVolume.datapoints;
+			ArrayList<double[]> rawProbs = new ArrayList<double[]>(numPoints);
+			for (int i = 0; i < numPoints; ++i) {
+				double[] probs = new double[numGenres];
+				Arrays.fill(probs, 0);
+				rawProbs.add(probs);
 			}
+			
+			for (int i = 2; i < numGenres; ++i) {
+				WekaDriver classify = classifiers.get(i);
+				double[][] probs = classify.testNewInstances(thesePages);
+				for (int j = 0; j < numPoints; ++j) {
+					rawProbs.get(j)[i] = probs[j][0];
+				}
+			}
+			
+			ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
+	
+			ClassificationResult rawResult = new ClassificationResult(rawProbs, numGenres, genres);
+			ClassificationResult smoothedResult = new ClassificationResult(smoothedProbs, numGenres, genres);
+			
+			ArrayList<String> rawPredictions = rawResult.predictions;
+			ArrayList<String> predictions = smoothedResult.predictions;
+			
+			String outFile = thisFile + ".predict";
+			String outPath = outputDir + "/" + outFile;
+			
+			LineWriter writer = new LineWriter(outPath, false);
+	
+			String[] outlines = new String[numPoints];
+			for (int i = 0; i < numPoints; ++i) {
+				outlines[i] = thesePages.get(i).label + "\t" + rawPredictions.get(i) + "\t" + predictions.get(i);
+			}
+			writer.send(outlines);
+			
+			this.predictionMetadata = thisFile + "\t" + Double.toString(smoothedResult.averageMaxProb) + "\t" +
+					Double.toString(smoothedResult.averageGap);
 		}
-		
-		ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
-
-		ClassificationResult rawResult = new ClassificationResult(rawProbs, numGenres, genres);
-		ClassificationResult smoothedResult = new ClassificationResult(smoothedProbs, numGenres, genres);
-		
-		ArrayList<String> rawPredictions = rawResult.predictions;
-		ArrayList<String> predictions = smoothedResult.predictions;
-		
-		String outFile = thisFile + ".predict";
-		String outPath = outputDir + "/" + outFile;
-		
-		LineWriter writer = new LineWriter(outPath, false);
-
-		String[] outlines = new String[numPoints];
-		for (int i = 0; i < numPoints; ++i) {
-			outlines[i] = thesePages.get(i).label + "\t" + rawPredictions.get(i) + "\t" + predictions.get(i);
+		else {
+			this.predictionMetadata = thisFile + "\tNA\tNA";
+			// file not found
 		}
-		writer.send(outlines);
-		
-		this.predictionMetadata = thisFile + "\t" + Double.toString(smoothedResult.averageMaxProb) + "\t" +
-				Double.toString(smoothedResult.averageGap);
 	}
 	
 }
