@@ -68,13 +68,19 @@ public class MapPages {
 	 * -ridge (double)	Ridge parameter for regularizing logistic regression.		
 	 */
 	public static void main(String[] args) {
-		WarningLogger.initializeLogger(true, "/home/tunder/java/genre/warninglog.txt");
 		
 		// We send command-line arguments to a parser and then query the parser
 		// to find whether certain options are present, and what values are assigned
 		// to them.
 		
+		String logfile = "/Users/tunder/output/warninglog.txt";
 		ArgumentParser parser = new ArgumentParser(args);
+		if (parser.isPresent("-log")) {
+			logfile = parser.getString("-log");
+		}
+		
+		WarningLogger.initializeLogger(true, logfile);
+		
 		boolean trainingRun = parser.isPresent("-train");
 		// The most important option defines whether this is a training run.
 		
