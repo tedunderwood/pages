@@ -36,7 +36,7 @@ public class MapPages {
 	static int NTHREADS = 10;
 	static int NFOLDS = 5;
 	static int minutesToWait = 30;
-	static String RIDGE = "60";
+	static String RIDGE = "20";
 	static int featureCount;
 	static int numGenres;
 	static int numInstances;
@@ -59,6 +59,9 @@ public class MapPages {
 	 * -self			Which implies that training/pagefeatures will be classified.
 	 * -cross (int)		Number of crossvalidation folds; e.g., five-fold. The int parameter
 	 * 					is optional. Default 5.
+	 * -addtraining (dir)	Specifies an additional directory to be used as training data in every
+	 * 						fold of crossvalidation, but not treated as grount truth for testing.
+	 * 						This is useful e.g. for co-training.		
 	 * -save			Model will be saved to output directory. We don't save multiple cross-
 	 * 					validation models, so incompatible with -cross.
 	 * -local			Indicates that the model will be applied to a local directory. Otherwise we expect
@@ -88,7 +91,8 @@ public class MapPages {
 		String dirForOutput;
 		String featureDir;
 		String genreDir;
-		String vocabPath = "/Users/tunder/Dropbox/pagedata/mixedvocabulary.txt";
+		String additionalTrainingDir = null;
+		String vocabPath = "/Users/tunder/Dropbox/pagedata/enlargedvocabulary.txt";
 		
 		if (parser.isPresent("-output")) {
 			dirForOutput = parser.getString("-output");
@@ -139,7 +143,12 @@ public class MapPages {
 			boolean serialize = parser.isPresent("-save");
 			if (crossvalidate) serialize = false;
 			
-			trainingRun (vocabPath, featureDir, genreDir, dirToProcess, dirForOutput, crossvalidate, serialize);
+			if (parser.isPresent("-addtraining")) {
+				additionalTrainingDir = parser.getString("-addtraining");
+			}
+			
+			trainingRun (vocabPath, featureDir, genreDir, dirToProcess, dirForOutput, 
+					additionalTrainingDir, crossvalidate, serialize);
 		}
 		else {
 			boolean local = parser.isPresent("-local");
@@ -173,23 +182,36 @@ public class MapPages {
 	}
 	
 	private static void trainingRun (String vocabPath, String featureDir, String genreDir, 
-			String dirToProcess, String dirForOutput, boolean crossvalidate, boolean serialize) {
+			String dirToProcess, String dirForOutput, String additionalTrainingDir,
+			boolean crossvalidate, boolean serialize) {
 		
-		vocabulary = new Vocabulary(vocabPath, 1000, true);
-		// reads in the first 1000 features and adds a catch-all category
-		// if there are fewer than 1000 features in vocab, it reads them all
+		vocabulary = new Vocabulary(vocabPath, 5000, true);
+		// reads in the first 5000 features and adds a catch-all category
+		// if there are fewer than 5000 features in vocab, it reads them all
 		
-		File featureFolder = new File(featureDir);
-		File[] featureFiles = featureFolder.listFiles();
-		
-		File genreFolder = new File(genreDir);
-		File[] genreFiles = genreFolder.listFiles();
-		
-		System.out.println(genreFiles.length);
-		
-		ArrayList<String> volumeLabels = folderIntersection(featureFiles, genreFiles);
+		ArrayList<String> volumeLabels = folderIntersection(featureDir, genreDir);
 		int numVolumes = volumeLabels.size();
 		System.out.println("Intersection of " + numVolumes);
+		
+		// The additionalTrainingDir is a directory containing additional volumes
+		// that should be added to every iteration of crossvalidation -- for instance,
+		// as a consequence of cotraining or active learning.
+		// We implement this by creating an additional array of volume labels. Since the
+		// root path for finding features & genres will be different for these volumes, we
+		// need to create arrays of featurePaths and genrePaths that are keyed to the
+		// volume labels.
+		ArrayList<String> moreVolumeLabels = new ArrayList<String>();
+		ArrayList<String> moreFeaturePaths = new ArrayList<String>();
+		ArrayList<String> moreGenrePaths = new ArrayList<String>();
+		if (additionalTrainingDir != null) {
+			String additionalFeatureDir = additionalTrainingDir + "pagefeatures/";
+			String additionalGenreDir = additionalTrainingDir + "genremaps/";
+			moreVolumeLabels = folderIntersection(additionalFeatureDir, additionalGenreDir);
+			for (int i = 0; i < moreVolumeLabels.size(); ++ i) {
+				moreFeaturePaths.add(additionalFeatureDir);
+				moreGenrePaths.add(additionalGenreDir);
+			}
+		}
 
 		ArrayList<String> filesToProcess = DirectoryList.getStrippedPGTSVs(dirToProcess);
 		
@@ -217,10 +239,30 @@ public class MapPages {
 			Partition partition = new Partition(filesToProcess, NFOLDS);
 			for (int i = 0; i < NFOLDS; ++i) {
 				System.out.println("Iteration: " + Integer.toString(i));
+				
+				// We take everything not in the current fold as our trainingSet.
 				ArrayList<String> trainingSet = partition.volumesExcluding(i);
 				ArrayList<String> testSet = partition.volumesInFold(i);
 				
-				GenreList newGenreList = trainAndClassify(trainingSet, featureDir, genreDir, 
+				// We need to create an array of featurePaths and genrePaths
+				// keyed to these volumes, because if an additionalTrainingDir is
+				// present, the directory will not be the same for every volume in
+				// the final trainingSet.
+				int initialTrainingSize = trainingSet.size();
+				ArrayList<String> featurePaths = new ArrayList<String>();
+				ArrayList<String> genrePaths = new ArrayList<String>();
+				for (int j = 0 ; j < initialTrainingSize; ++ j){
+					featurePaths.add(featureDir);
+					genrePaths.add(genreDir);
+				}
+				
+				if (additionalTrainingDir != null) {
+					trainingSet.addAll(moreVolumeLabels);
+					featurePaths.addAll(moreFeaturePaths);
+					genrePaths.addAll(moreGenrePaths);
+				}
+				
+				GenreList newGenreList = trainAndClassify(trainingSet, featurePaths, genrePaths, 
 						dirToProcess, testSet, dirForOutput, serialize);
 				// The important outputs of trainAndClassify are obviously, the genre 
 				// predictions that get written to file inside the methof. But the method also 
@@ -240,7 +282,13 @@ public class MapPages {
 			}
 		}
 		else {
-			trainAndClassify(volumeLabels, featureDir, genreDir, dirToProcess, filesToProcess, dirForOutput, serialize);
+			ArrayList<String> featurePaths = new ArrayList<String>();
+			ArrayList<String> genrePaths = new ArrayList<String>();
+			for (int j = 0 ; j < numVolumes; ++ j){
+				featurePaths.add(featureDir);
+				genrePaths.add(genreDir);
+			}
+			trainAndClassify(volumeLabels, featurePaths, genrePaths, dirToProcess, filesToProcess, dirForOutput, serialize);
 		}
 	
 		System.out.println("DONE.");
@@ -261,10 +309,10 @@ public class MapPages {
 	 * @param dirForOutput     Self-explanatory. This is where the .map files that result from classification
 	 *                         will be written out.
 	 */
-	private static GenreList trainAndClassify (ArrayList<String> trainingVols, String featureDir, String genreDir, 
+	private static GenreList trainAndClassify (ArrayList<String> trainingVols, ArrayList<String> featurePaths, ArrayList<String> genrePaths, 
 			String inputDir, ArrayList<String> volsToProcess, String dirForOutput, boolean serialize) {
 		
-		Model model = trainModel(trainingVols, featureDir, genreDir);
+		Model model = trainModel(trainingVols, featurePaths, genrePaths);
 		
 		MarkovTable markov = model.markov;
 		ArrayList<String> genres = model.genreList.genreLabels;
@@ -327,11 +375,11 @@ public class MapPages {
 		return model.genreList;
 	}
 	
-	private static Model trainModel (ArrayList<String> trainingVols, String featureDir, String genreDir) {
+	private static Model trainModel (ArrayList<String> trainingVols, ArrayList<String> featurePaths, ArrayList<String> genrePaths) {
 		
 		featureCount = vocabulary.vocabularySize;
 		System.out.println(featureCount + " features.");
-		Corpus corpus = new Corpus(featureDir, genreDir, trainingVols, vocabulary);
+		Corpus corpus = new Corpus(featurePaths, genrePaths, trainingVols, vocabulary);
 		numGenres = corpus.genres.getSize();
 		System.out.println(numGenres);
 		numInstances = corpus.numPoints;
@@ -494,9 +542,17 @@ public class MapPages {
 	 * @param featureFiles
 	 * @return
 	 */
-	private static ArrayList<String> folderIntersection(File[] featureFiles, File[] genreFiles) {
+	private static ArrayList<String> folderIntersection(String featureDir, String genreDir) {
 		
 		ArrayList<String> hathiIDs = new ArrayList<String>();
+		
+		File featureFolder = new File(featureDir);
+		File[] featureFiles = featureFolder.listFiles();
+		
+		File genreFolder = new File(genreDir);
+		File[] genreFiles = genreFolder.listFiles();
+		
+		System.out.println(genreFiles.length);
 		
 		for (File aFile: featureFiles) {
 			if (!aFile.isFile()) continue;

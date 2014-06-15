@@ -26,7 +26,7 @@ public class Corpus {
 	Vocabulary vocabulary;
 	FeatureNormalizer normalizer;
 
-	public Corpus(String featurePath, String genrePath, ArrayList<String> trainingVols, Vocabulary vocab) {
+	public Corpus(ArrayList<String> featurePaths, ArrayList<String> genrePaths, ArrayList<String> trainingVols, Vocabulary vocab) {
 
 		genres = new GenreList();
 		vocabulary = vocab;
@@ -39,11 +39,11 @@ public class Corpus {
 		numVolumes = trainingVols.size();
 		
 		// First read in a genre sequence for each volume.
-		volumeGenres = getVolumeGenres(genrePath, trainingVols);
+		volumeGenres = getVolumeGenres(genrePaths, trainingVols);
 		
 		// Now read in a feature sequence for each volume
 		
-		volumes = readVolumes(featurePath, trainingVols, featureMap);
+		volumes = readVolumes(featurePaths, trainingVols, featureMap);
 
 		// The Volume objects read the lines associated with a single
 		// HathiTrust volume ID. Then they can produce DataPoints that
@@ -114,10 +114,17 @@ public class Corpus {
 
 	}
 	
-	private ArrayList<Volume> readVolumes(String featurePath, ArrayList<String> volumeLabels, HashMap<String, Integer> featureMap) {
+	private ArrayList<Volume> readVolumes(ArrayList<String> featurePaths, ArrayList<String> volumeLabels, HashMap<String, Integer> featureMap) {
 		ArrayList<Volume> volumes = new ArrayList<Volume>();
 		
-		for (String volID : volumeLabels) {
+		if (featurePaths.size() != volumeLabels.size()) {
+			System.out.println("Error: number of paths != number of volumes in readVolumes method.");
+			System.exit(0);
+		}
+		
+		for (int i = 0; i < volumeLabels.size(); ++i) {
+			String volID = volumeLabels.get(i);
+			String featurePath = featurePaths.get(i);
 			String volumePath = featurePath + volID + ".pg.tsv";
 			LineReader fileSource = new LineReader(volumePath);
 			String[] filelines = fileSource.readlines();
@@ -155,9 +162,17 @@ public class Corpus {
 		return volumes;
 	}
 	
-	private ArrayList<ArrayList<String>> getVolumeGenres(String genrePath, ArrayList<String> volumeLabels) {
+	private ArrayList<ArrayList<String>> getVolumeGenres(ArrayList<String> genrePaths, ArrayList<String> volumeLabels) {
 		volumeGenres = new ArrayList<ArrayList<String>>();
-		for (String label: volumeLabels) {
+		
+		if (genrePaths.size() != volumeLabels.size()) {
+			System.out.println("Error: number of paths != number of volumes in getVolumeGenres method.");
+			System.exit(0);
+		}
+		
+		for (int i = 0; i < volumeLabels.size(); ++i) {
+			String label = volumeLabels.get(i);
+			String genrePath = genrePaths.get(i);
 			String genreFilePath = genrePath + label + ".map";
 			LineReader fileSource = new LineReader(genreFilePath);
 			String[] filelines = fileSource.readlines();
@@ -213,12 +228,13 @@ public class Corpus {
 		this.vocabulary = vocabulary;
 		this.normalizer = normalizer;
 		featureMap = vocabulary.getMap();
-		
+		ArrayList<String> featurePaths = new ArrayList<String>(1);
+		featurePaths.add(featurePath);
 		// In this builder of corpora, we assume a) that we only have
 		// wordcounts and don't yet know the genres and b) a vocabulary
 		// for the model has already been established.
 
-		volumes = readVolumes(featurePath, volumeLabels, featureMap);
+		volumes = readVolumes(featurePaths, volumeLabels, featureMap);
 
 		// In this implementation of Corpus, we should actually
 		// only have one volume in our data.
