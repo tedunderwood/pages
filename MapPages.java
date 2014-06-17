@@ -141,7 +141,6 @@ public class MapPages {
 				}
 			}
 			boolean serialize = parser.isPresent("-save");
-			if (crossvalidate) serialize = false;
 			
 			if (parser.isPresent("-addtraining")) {
 				additionalTrainingDir = parser.getString("-addtraining");

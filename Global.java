@@ -34,8 +34,8 @@ public class Global {
 //		{ "gloss", "back" }, {"subsc", "catal"} };
 	
 	public static final String[][] CONVERSIONS = { {"subsc", "front"}, {"argum", "non"}, {"pref", "non"},
-		{"aut", "bio"}, {"toc", "front"}, {"title", "front"}, {"bookp", "front"},
+		{"aut", "non"}, {"bio", "non"}, {"toc", "front"}, {"title", "front"}, {"bookp", "front"},
 		{"bibli", "back"}, {"gloss", "back"}, {"index", "back"}, {"epi", "fic"}, {"errat", "non"}, {"notes", "non"}, {"ora", "non"}, 
-		{"let", "bio"}, {"trv", "non"}, {"lyr", "poe"}, {"nar", "poe"}, {"vdr", "dra"}, {"pdr", "dra"},
+		{"let", "non"}, {"trv", "non"}, {"lyr", "poe"}, {"nar", "poe"}, {"vdr", "dra"}, {"pdr", "dra"},
 		{"clo", "dra"}, {"impri", "front"}, {"libra", "back"} };
 }

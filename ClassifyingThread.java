@@ -83,6 +83,10 @@ public class ClassifyingThread implements Runnable {
 			String[] outlines = new String[numPoints];
 			for (int i = 0; i < numPoints; ++i) {
 				outlines[i] = thesePages.get(i).label + "\t" + rawPredictions.get(i) + "\t" + predictions.get(i);
+				for (int j = 0; j < genres.size(); ++j) {
+					double[] thisPageProbs = smoothedProbs.get(i);
+					outlines[i] = outlines[i] + "\t" + genres.get(j) + "::" + Double.toString(thisPageProbs[j]);
+				}
 			}
 			writer.send(outlines);
 			
