@@ -33,9 +33,25 @@ public class Global {
 //		{ "title", "front" }, { "impri", "front" },
 //		{ "gloss", "back" }, {"subsc", "catal"} };
 	
-	public static final String[][] CONVERSIONS = { {"subsc", "front"}, {"argum", "non"}, {"pref", "non"},
+	public static String[][] CONVERSIONS = { {"subsc", "front"}, {"argum", "non"}, {"pref", "non"},
 		{"aut", "non"}, {"bio", "non"}, {"toc", "front"}, {"title", "front"}, {"bookp", "front"},
 		{"bibli", "back"}, {"gloss", "back"}, {"index", "back"}, {"epi", "fic"}, {"errat", "non"}, {"notes", "non"}, {"ora", "non"}, 
 		{"let", "non"}, {"trv", "non"}, {"lyr", "poe"}, {"nar", "poe"}, {"vdr", "dra"}, {"pdr", "dra"},
 		{"clo", "dra"}, {"impri", "front"}, {"libra", "back"} };
+	
+	public static void separateBiography() {
+		for (String[] aPair : CONVERSIONS) {
+			if (aPair[0].equals("bio")) aPair[1] = "bio";
+			if (aPair[0].equals("aut")) aPair[1] = "bio";
+			if (aPair[0].equals("let")) aPair[1] = "bio";
+		}
+	}
+	
+	public static void separateIndex() {
+		for (String[] aPair : CONVERSIONS) {
+			if (aPair[0].equals("index")) aPair[1] = "index";
+			if (aPair[0].equals("gloss")) aPair[1] = "index";
+			if (aPair[0].equals("bibli")) aPair[1] = "index";
+		}
+	}
 }

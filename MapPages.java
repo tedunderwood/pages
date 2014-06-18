@@ -68,7 +68,10 @@ public class MapPages {
 	 * -pairtreeroot (dir)	The root of a pairtree hierarchy, and
 	 * -slice (path)		Path to a file containing dirty HathiTrust ids that imply pairtree paths to vols.
 	 * -nthreads (int)	Number of threads to run in parallel. Default 10.
-	 * -ridge (double)	Ridge parameter for regularizing logistic regression.		
+	 * -ridge (double)	Ridge parameter for regularizing logistic regression.
+	 * -log (path)		Sets a location for warning log other than default: "/Users/tunder/output/warninglog.txt"
+	 * -bio				Separates biography (and autobiography and letters) from the rest of nonfiction.
+	 * -index			Separates index (and glossary and bibliography) from the rest of back matter.	
 	 */
 	public static void main(String[] args) {
 		
@@ -83,6 +86,14 @@ public class MapPages {
 		}
 		
 		WarningLogger.initializeLogger(true, logfile);
+		
+		if (parser.isPresent("-index")) {
+			Global.separateIndex();
+		}
+		
+		if (parser.isPresent("-bio")) {
+			Global.separateBiography();
+		}
 		
 		boolean trainingRun = parser.isPresent("-train");
 		// The most important option defines whether this is a training run.
