@@ -39,6 +39,8 @@ public class Global {
 		{"let", "non"}, {"trv", "non"}, {"lyr", "poe"}, {"nar", "poe"}, {"vdr", "dra"}, {"pdr", "dra"},
 		{"clo", "dra"}, {"impri", "front"}, {"libra", "back"} };
 	
+	public static boolean undersample = false;
+	
 	public static void separateBiography() {
 		for (String[] aPair : CONVERSIONS) {
 			if (aPair[0].equals("bio")) aPair[1] = "bio";

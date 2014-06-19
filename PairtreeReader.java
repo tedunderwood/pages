@@ -18,7 +18,10 @@ public class PairtreeReader {
 		String prefix = clean.substring(0, periodIndex);
 		// the part before the period
 		String pathPart = clean.substring(periodIndex+1);
-		// everything after the period
+		// ... and the part after, which unfortunately may contain
+		// other periods. These need to become commas.
+		pathPart = pathPart.replace(".", ",");
+		// Then we turn this into a pairtree path.
 		String ppath = mapToPPath(pathPart);
 		String encapsulatingDirectory = cleanID(pathPart);
 		String wholePath = dataPath + prefix + "/pairtree_root/" + ppath + "/"+ encapsulatingDirectory + 

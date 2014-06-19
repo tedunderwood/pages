@@ -95,6 +95,10 @@ public class MapPages {
 			Global.separateBiography();
 		}
 		
+		if (parser.isPresent("-undersample")) {
+			Global.undersample = true;
+		}
+		
 		boolean trainingRun = parser.isPresent("-train");
 		// The most important option defines whether this is a training run.
 		
@@ -407,7 +411,7 @@ public class MapPages {
 			// The first two genres are dummy genres for the front and back of the volume. So we don't actually train classifiers
 			// for them. The trainingThread class knows to return a dummy classifier when aGenre.equals("dummy").
 			
-			TrainingThread trainClassifier = new TrainingThread(corpus.genres, features, aGenre, corpus.datapoints, RIDGE, true);
+			TrainingThread trainClassifier = new TrainingThread(corpus.genres, features, aGenre, corpus.datapoints, RIDGE, true, Global.undersample);
 			trainingThreads.add(trainClassifier);
 		}
 		
