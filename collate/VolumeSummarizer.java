@@ -55,7 +55,6 @@ public class VolumeSummarizer implements Callable<VolumeSummary> {
 			
 			int page = -1;
 			String word = tokens[1];
-			if (word.startsWith("#")) continue;
 			
 			int count = 0;
 			try {
@@ -67,6 +66,7 @@ public class VolumeSummarizer implements Callable<VolumeSummary> {
 			}
 			
 			if (page > maxpage) maxpage = page;
+			if (word.startsWith("#")) continue;
 			
 			if (wordsPerPage.containsKey(page)) {
 				wordsPerPage.put(page, wordsPerPage.get(page) + count);

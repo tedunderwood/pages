@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Collection;
 
 import pages.ArgumentParser;
 import pages.InputFileException;
@@ -99,30 +100,35 @@ public class Collate {
 		// Let's create some json arrays.
 		
 		int timespan = enddate - startdate;
-		ArrayList<Integer> zeroes = new ArrayList<Integer>(timespan);
-		ArrayList<Integer> dates = new ArrayList<Integer>(timespan);
-		for (int i = 0; i < enddate; ++i) {
-			zeroes.add(0);
-			dates.add(startdate + i);
+		int[] zeroes = new int[timespan];
+		int[] dates = new int[timespan];
+		for (int i = 0; i < timespan; ++i) {
+			zeroes[i] = 0;
+			dates[i] = startdate + i;
 		}
 		
 		JSONObject tlvol = new JSONObject();
 		JSONObject tlword = new JSONObject();
-		tlvol.put("years", dates);
-		tlword.put("years", dates);
+		JSONArray years = new JSONArray(dates);
+		tlvol.put("years", years);
+		tlword.put("years", years);
 		
 		tlvol.put("genres", volgenres);
 		tlword.put("genres", wordgenres);
 		for (String aGenre : volgenres) {
-			tlvol.put(aGenre, zeroes);
+			JSONArray aZeroArray = new JSONArray(zeroes); 
+			tlvol.put(aGenre, aZeroArray);
 		}
 		for (String aGenre: wordgenres) {
-			tlword.put(aGenre, zeroes);
+			JSONArray aZeroArray = new JSONArray(zeroes);
+			tlword.put(aGenre, aZeroArray);
 		}
 		
 		for (VolumeSummary vol : allTheVols) {
 			String thisID = vol.cleanID;
 			int date = volumeDates.get(thisID);
+			if (date < 1700 | date > 1899) continue;
+			
 			int offset = date - startdate;
 			if (offset >= timespan) continue;
 			
@@ -145,7 +151,7 @@ public class Collate {
 		verytop.put("top_level_volume_graph", tlvol);
 		verytop.put("top_level_word_graph", tlword);
 		String jsonout = verytop.toString();
-		LineWriter output = new LineWriter(outputPath, false);
+	    LineWriter output = new LineWriter(outputPath, false);
 		output.print(jsonout);
 		
 	}
