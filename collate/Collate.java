@@ -16,7 +16,10 @@ import pages.ArgumentParser;
 import pages.InputFileException;
 import pages.LineReader;
 import pages.WarningLogger;
-import handy.Table;
+
+import handy.*;
+
+import json.*;
 
 /**
  * @author tunder
@@ -24,8 +27,12 @@ import handy.Table;
  */
 public class Collate {
 	
-	int startdate = 1700;
-	int enddate = 1899;
+	static int startdate = 1700;
+	static int enddate = 1900;
+	// startdate inclusive, enddate exclusive
+	static String[] volgenres = {"drama", "fiction", "nonfiction", "poetry", "mixed"};
+	static String[] wordgenres = {"drama", "fiction", "nonfiction", "poetry", "front", "back", "ads", "biography"};
+	static String[] equivalents = {"dra", "fic", "non", "poe", "front", "back", "ads", "bio"};
 
 	/**
 	 * @param args
@@ -44,10 +51,12 @@ public class Collate {
 		String metadataPath = parser.getString("-metadata");
 		Table metadata = new Table(metadataPath);
 		
+		String outputPath = parser.getString("-output");
+		
 		String pairtreeRoot = parser.getString("-pairtreeroot");
 		String slicePath = parser.getString("-slice");
 		
-		ArrayList<String> cleanIDs = getSlice(slicePath);
+		ArrayList<String> cleanIDs = DirectoryScraper.filesSansExtension(slicePath, ".predict");
 		
 		Map<String, Integer> volumeDates = new HashMap<String, Integer>();
 		for (String cleanID : cleanIDs) {
@@ -64,7 +73,7 @@ public class Collate {
 		
 		ArrayList<Future<VolumeSummary>> summaries = new ArrayList<Future<VolumeSummary>>();
 		for (String anID : cleanIDs) {
-			VolumeSummarizer summarizeThisOne = new VolumeSummarizer(anID, pairtreeRoot, "dummy");
+			VolumeSummarizer summarizeThisOne = new VolumeSummarizer(anID, pairtreeRoot, slicePath);
 			Future<VolumeSummary> summary = executor.submit(summarizeThisOne);
 			summaries.add(summary);
 		}
@@ -87,19 +96,68 @@ public class Collate {
 			}
 		}
 		
-		// Let's create a json object hierarchy.
+		// Let's create some json arrays.
+		
+		int timespan = enddate - startdate;
+		ArrayList<Integer> zeroes = new ArrayList<Integer>(timespan);
+		ArrayList<Integer> dates = new ArrayList<Integer>(timespan);
+		for (int i = 0; i < enddate; ++i) {
+			zeroes.add(0);
+			dates.add(startdate + i);
+		}
+		
+		JSONObject tlvol = new JSONObject();
+		JSONObject tlword = new JSONObject();
+		tlvol.put("years", dates);
+		tlword.put("years", dates);
+		
+		tlvol.put("genres", volgenres);
+		tlword.put("genres", wordgenres);
+		for (String aGenre : volgenres) {
+			tlvol.put(aGenre, zeroes);
+		}
+		for (String aGenre: wordgenres) {
+			tlword.put(aGenre, zeroes);
+		}
 		
 		for (VolumeSummary vol : allTheVols) {
 			String thisID = vol.cleanID;
-			Map<String, Integer> wordsPerGenre = vol.wordsPerGenre;
-			String volGenre = vol.volGenre;
+			int date = volumeDates.get(thisID);
+			int offset = date - startdate;
+			if (offset >= timespan) continue;
 			
+			String volGenre = vol.volGenre;
+			JSONArray volseries = tlvol.getJSONArray(volGenre);
+			int currentvalue = volseries.getInt(offset);
+			volseries.put(offset, currentvalue +1);
+			
+			Map<String, Integer> wordsPerGenre = vol.wordsPerGenre;
+			for (String genre : wordsPerGenre.keySet()) {
+				int numwords = wordsPerGenre.get(genre);
+				String translated = translateGenre(genre);
+				JSONArray wordseries = tlword.getJSONArray(translated);
+				currentvalue = wordseries.getInt(offset);
+				wordseries.put(offset, currentvalue + numwords);
+			}	
 		}
 		
-		
+		JSONObject verytop = new JSONObject();
+		verytop.put("top_level_volume_graph", tlvol);
+		verytop.put("top_level_word_graph", tlword);
+		String jsonout = verytop.toString();
+		LineWriter output = new LineWriter(outputPath, false);
+		output.print(jsonout);
 		
 	}
 	
+	private static String translateGenre(String shortGenre) {
+		int idx = 0;
+		for (int i = 0; i < equivalents.length; ++i) {
+			if (shortGenre.equals(equivalents[i])) idx = i;
+		}
+		
+		return wordgenres[idx];
+	}
 	private static ArrayList<String> getSlice(String slicePath) {
 		ArrayList<String> dirtyHtids;
 		LineReader getHtids = new LineReader(slicePath);
