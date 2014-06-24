@@ -11,7 +11,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Collection;
 
 import pages.ArgumentParser;
 import pages.InputFileException;
@@ -34,7 +33,10 @@ public class Collate {
 	static String[] volgenres = {"drama", "fiction", "nonfiction", "poetry", "mixed"};
 	static String[] wordgenres = {"drama", "fiction", "nonfiction", "poetry", "front", "back", "ads", "biography"};
 	static String[] equivalents = {"dra", "fic", "non", "poe", "front", "back", "ads", "bio"};
-
+	static String pairtreeRoot;
+	static String outputPath;
+	static Table metadata;
+	
 	/**
 	 * @param args
 	 */
@@ -50,15 +52,23 @@ public class Collate {
 		WarningLogger.initializeLogger(true, logfile);
 		
 		String metadataPath = parser.getString("-metadata");
-		Table metadata = new Table(metadataPath);
+		metadata = new Table(metadataPath);
 		
-		String outputPath = parser.getString("-output");
+		outputPath = parser.getString("-output");
 		
-		String pairtreeRoot = parser.getString("-pairtreeroot");
+		pairtreeRoot = parser.getString("-pairtreeroot");
+		
 		String slicePath = parser.getString("-slice");
+		int startInt = parser.getInteger("-startint");
 		
-		ArrayList<String> cleanIDs = DirectoryScraper.filesSansExtension(slicePath, ".predict");
-		
+		for (int i = startInt; i < startInt + 6; ++ i) {
+			String fullPath = slicePath + Integer.toString(i) + "/";
+			ArrayList<String> cleanIDs = DirectoryScraper.filesSansExtension(fullPath, ".predict");
+			oneSlice(cleanIDs, fullPath, i);
+		}
+	}
+	
+	private static void oneSlice(ArrayList<String> cleanIDs, String slicePath, int sliceNumber) {
 		Map<String, Integer> volumeDates = new HashMap<String, Integer>();
 		for (String cleanID : cleanIDs) {
 			String dirtyID = toDirtyID(cleanID);
@@ -151,7 +161,8 @@ public class Collate {
 		verytop.put("top_level_volume_graph", tlvol);
 		verytop.put("top_level_word_graph", tlword);
 		String jsonout = verytop.toString();
-	    LineWriter output = new LineWriter(outputPath, false);
+		String fullOutputPath = outputPath + "slice" + Integer.toString(sliceNumber) + ".json";
+	    LineWriter output = new LineWriter(fullOutputPath, false);
 		output.print(jsonout);
 		
 	}

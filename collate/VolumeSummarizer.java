@@ -42,8 +42,6 @@ public class VolumeSummarizer implements Callable<VolumeSummary> {
 		PairtreeReader pairtree = new PairtreeReader(pairtreeRoot);
 		ArrayList<String> filelines = pairtree.getVolume(cleanID);
 		
-		System.out.println("Lines: " + Integer.toString(filelines.size()));
-		
 		int maxpage = 0;
 		
 		for (String line : filelines){
