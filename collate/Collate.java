@@ -13,8 +13,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import pages.ArgumentParser;
-import pages.InputFileException;
-import pages.LineReader;
+//import pages.InputFileException;
+//import pages.LineReader;
 import pages.WarningLogger;
 
 import handy.*;
@@ -175,24 +175,24 @@ public class Collate {
 		
 		return wordgenres[idx];
 	}
-	private static ArrayList<String> getSlice(String slicePath) {
-		ArrayList<String> dirtyHtids;
-		LineReader getHtids = new LineReader(slicePath);
-		try {
-			dirtyHtids = getHtids.readList();
-		}
-		catch (InputFileException e) {
-			System.out.println("Missing slice file: " + slicePath);
-			dirtyHtids = null;
-		}
-		return dirtyHtids;
-	}
-	
-	private static String toCleanID(String dirtyID) {
-		dirtyID = dirtyID.replace(":", "+");
-		dirtyID = dirtyID.replace("/", "=");
-		return dirtyID;
-	}
+//	private static ArrayList<String> getSlice(String slicePath) {
+//		ArrayList<String> dirtyHtids;
+//		LineReader getHtids = new LineReader(slicePath);
+//		try {
+//			dirtyHtids = getHtids.readList();
+//		}
+//		catch (InputFileException e) {
+//			System.out.println("Missing slice file: " + slicePath);
+//			dirtyHtids = null;
+//		}
+//		return dirtyHtids;
+//	}
+//	
+//	private static String toCleanID(String dirtyID) {
+//		dirtyID = dirtyID.replace(":", "+");
+//		dirtyID = dirtyID.replace("/", "=");
+//		return dirtyID;
+//	}
 	
 	private static String toDirtyID(String cleanID) {
 		cleanID = cleanID.replace("+", ":");
