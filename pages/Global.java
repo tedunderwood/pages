@@ -12,8 +12,11 @@ package pages;
  */
 public class Global {
 	public static final String[] STRUCTURALFEATURES = { "posInVol", "lineLengthRatio",
-		"capRatio", "wordRatio", "distanceFromMid", "allCapRatio", "maxInitialRatio", 
-		"maxPairRatio", "wordsPerLine", "totalWords", "typeToken" };
+		"capRatio", "wordRatio", "distanceFromMid", "allCapRatio", "maxInitialRatio", "maxPairRatio", 
+		"wordsPerLine", "totalWords", "typeToken", "commasNorm", "periodsNorm", "quotationsNorm",
+		"exclamationsNorm", "questionsNorm", "endWithPunct", "endWithNum", "startWithName", "startWithRubric",
+		"capSequence", "capSeqNorm", "startRatio", "absWordRatio"};
+	
 		// "posInVol" = pagenum / totalpages
 		// "lineLengthRatio" = textlines / mean lines per page
 		// "capRatio" = caplines / textlines
@@ -25,6 +28,19 @@ public class Global {
 		// "wordsPerLine" = total words on page / total lines on page
 		// "totalWords" = total words on page
 		// "typeToken" = types on page / tokens on page
+		// "commasNorm" = commas normalized for wordcount
+		// "periodsNorm" = periods normalized for wordcount
+		// "quotationsNorm" = quotation marks normalized for wordcount
+		// "exclamationsNorm" = exclamation points normalized for wordcount
+		// "questionsNorm" = questions normalized for wordcount
+		// "endWithPunct" = Proportion of lines ending with punctuation.
+		// "endWithNum" = Proportion of lines ending with a digit as either of last two chars.
+		// "startWithName" = Proportion of lines starting with a word that might be a name.
+		// "startWithRubric" = Proportion of lines starting with a capitalized word that ends w/ a period.
+		// "capSequence" = Largest number of capitalized initials in alphabetical sequence.
+		// "capSeqNorm" = Sequential caps normalized for the number of capitalized lines.
+		// "startRatio" = (startWName * startWRubric) / wordNotinVocab
+		// "absWordRatio" = absolute deviation from word mean for vol, normalized by word mean
 	public static final int FEATURESADDED = STRUCTURALFEATURES.length;
 	
 //	public static final String[][] CONVERSIONS = { { "colop", "back" },

@@ -85,7 +85,7 @@ public class Volume {
 		// of lines in a page, this needs to be added to the listOfLineCounts
 		// for pages in the volume.
 		
-		if (featurename .equals("#textlines")) {
+		if (featurename.equals("#textlines")) {
 			listOfLineCounts.add(count);
 		}
 		
@@ -192,10 +192,10 @@ public class Volume {
 			
 			// Create a vector of the requisite dimensionality; initialize to zero.
 			// Note that the dimensionality for page points is 
-			// vocabularySize + 11  !! Because structural features.
+			// vocabularySize + FEATURESADDED  !! Because structural features.
 			
 			int vocabularySize = vocabularyMap.size();
-			int dimensionality = vocabularySize + 11;
+			int dimensionality = vocabularySize + Global.FEATURESADDED;
 			double[] vector = new double[dimensionality];
 			double sumAllWords = 0.0001d;
 			// This is a super-cheesy way to avoid div by zero.
@@ -204,10 +204,21 @@ public class Volume {
 			
 			// Then sum all occurrences of words to the appropriate vector index.
 			double textlines = 0.0001d;
-			double caplines = 0;
+			double caplines = 0.0001d;
 			double maxinitial = 0;
 			double maxpair = 0;
 			double allcapwords = 0;
+			double commas = 0;
+			double periods = 0;
+			double exclamationpoints = 0;
+			double questionmarks = 0;
+			double quotations = 0;
+			double endwpunct = 0;
+			double endwnumeral = 0;
+			double startwrubric = 0;
+			double startwname = 0;
+			double sequentialcaps = 0;
+			double wordnotinvocab = 0;
 			
 			for (String[] feature : thisPage) {
 				String word = feature[1];
@@ -220,9 +231,25 @@ public class Volume {
 					double count = Double.parseDouble(feature[2]);
 					vector[idx] += count;
 					sumAllWords += count;
+					if (word.equals("wordNotInVocab")) {
+						wordnotinvocab += 1;
+					}
+					
+					// Certain types handled collectively should actually increase
+					// the number of types by more than one. I could include personal
+					// names here, but don't, because my secret agenda is to make
+					// feature #23 high in pages of drama.
+					if (word.equals("propernoun")) {
+						types += (count - 1);
+						wordnotinvocab += count;
+					}
+					if (word.equals("placename")) {
+						types += (count - 1);
+						wordnotinvocab += count;
+					}
 				}
 				
-				if (word.equals("#textlines")) {
+				if (word.equals("#textlines") | word.equals("#lines")) {
 					textlines = Double.parseDouble(feature[2]);
 					continue;
 					// Really an integer but cast as double to avoid 
@@ -233,21 +260,58 @@ public class Volume {
 					caplines = Double.parseDouble(feature[2]);
 					continue;
 				}
-				
 				if (word.equals("#maxinitial")) {
 					maxinitial = Double.parseDouble(feature[2]);
 					continue;
 				}
-				
 				if (word.equals("#maxpair")) {
 					maxpair = Double.parseDouble(feature[2]);
 					continue;
 				}
-				
 				if (word.equals("#allcapswords")) {
 					allcapwords = Double.parseDouble(feature[2]);
+					continue;
 				}
-				
+				if (word.equals("#commas")) {
+					commas = Double.parseDouble(feature[2]);
+					continue;
+				}
+				if (word.equals("#periods")) {
+					periods = Double.parseDouble(feature[2]);
+					continue;
+				}
+				if (word.equals("#quotations")) {
+					quotations = Double.parseDouble(feature[2]);
+					continue;
+				}
+				if (word.equals("#exclamationpoints")) {
+					exclamationpoints = Double.parseDouble(feature[2]);
+					continue;
+				}
+				if (word.equals("#questionmarks")) {
+					questionmarks = Double.parseDouble(feature[2]);
+					continue;
+				}
+				if (word.equals("#endwpunct")) {
+					endwpunct = Double.parseDouble(feature[2]);
+					continue;
+				}
+				if (word.equals("#endwnumeral")) {
+					endwnumeral = Double.parseDouble(feature[2]);
+					continue;
+				}
+				if (word.equals("#startwrubric")) {
+					startwrubric = Double.parseDouble(feature[2]);
+					continue;
+				}
+				if (word.equals("#startwname")) {
+					startwname = Double.parseDouble(feature[2]);
+					continue;
+				}
+				if (word.equals("#sequentialcaps")) {
+					sequentialcaps = Double.parseDouble(feature[2]);
+					continue;
+				}
 			}
 			
 			// Normalize the feature counts for total words on page:
@@ -291,6 +355,32 @@ public class Volume {
 			// "totalWords" = total words on page
 			vector[vocabularySize + 10] = types / sumAllWords;
 			// type-token ratio
+			vector[vocabularySize + 11] = commas / sumAllWords;
+			// commas normalized for wordcount
+			vector[vocabularySize + 12] = periods / sumAllWords;
+			// periods normalized for wordcount
+			vector[vocabularySize + 13] = quotations / sumAllWords;
+			// quotation marks normalized for wordcount
+			vector[vocabularySize + 14] = exclamationpoints / sumAllWords;
+			// exclamation points normalized for wordcount
+			vector[vocabularySize + 15] = questionmarks / sumAllWords;
+			// question marks normalized for wordcount
+			vector[vocabularySize + 16] = endwpunct / textlines;
+			// Proportion of lines ending with punctuation.
+			vector[vocabularySize + 17] = endwnumeral / textlines;
+			// Proportion of lines ending with a digit as either of last two chars.
+			vector[vocabularySize + 18] = startwname / textlines;
+			// Proportion of lines starting with a word that might be a name.
+			vector[vocabularySize + 19] = startwrubric / textlines;
+			// Proportion of lines starting with a capitalized word that ends w/ a period.
+			vector[vocabularySize + 20] = sequentialcaps;
+			// Largest number of capitalized initials in alphabetical sequence.
+			vector[vocabularySize + 21] = sequentialcaps / (caplines + 0.0001);
+			// Sequential caps normalized for the number of capitalized lines.
+			vector[vocabularySize + 22] = ((startwname +1) * (startwrubric+1)) / (wordnotinvocab + 1);
+			// Okay, now I'm just throwing stuff at the wall to see if it sticks.
+			vector[vocabularySize + 23] = Math.abs(sumAllWords - meanWordsPerPage) / meanWordsPerPage;
+			// absolute deviation, plus or minus, from mean num words, normalized by mean
 			
 			String label = volumeID + "," + Integer.toString(thisPageNum);
 			DataPoint thisPoint = new DataPoint(label, vector);
