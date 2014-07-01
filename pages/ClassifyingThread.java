@@ -36,7 +36,10 @@ public class ClassifyingThread implements Runnable {
 	public void run() {
 		// We have a choice of two different corpus constructors, depending on whether we
 		// are running this classification on a local directory, or on the cluster using
-		// files located in a pairtree hierarchy.
+		// files located in a pairtree hierarchy. The reason for the difference is that
+		// we need different i/o routines inside Corpus. This really has nothing to do 
+		// with the "wrapper" business, which is purposeless code inherited from an
+		// older version.
 		
 		Corpus thisVolume;
 		if (isPairtree) {

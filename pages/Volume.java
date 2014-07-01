@@ -3,6 +3,7 @@ package pages;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Arrays;
+import java.util.HashSet;
 
 /**
  * @author tunderwood
@@ -35,6 +36,7 @@ public class Volume {
 	int maxPageNum;
 	int totalWords;
 	ArrayList<String[]> sparseTable;
+	HashSet<String> metadataFeatures;
 	
 	public Volume(String volumeID) {
 		this.volumeID = volumeID;
@@ -44,6 +46,7 @@ public class Volume {
 		maxPageNum = 0;
 		totalWords = 0;
 		sparseTable = new ArrayList<String[]>();
+		metadataFeatures = new HashSet<String>();
 	}
 	/** 
 	 * This method accepts a line from the database, already parsed into a
@@ -67,12 +70,19 @@ public class Volume {
 		// #textlines gets reported even if zero.
 		
 		int pageNum = Integer.parseInt(feature[0]);
+		String featurename = feature[1];
+		
+		if (pageNum < 0) {
+			// This is a special volume-level feature that will be attached to all pages
+			metadataFeatures.add(featurename);
+			return;
+		}
+		
 		if (!listOfPages.contains(pageNum)) {
 			listOfPages.add(pageNum);
 			numberOfPages = listOfPages.size();
 		}
 		
-		String featurename = feature[1];
 		int count = Integer.parseInt(feature[2]);
 		
 		if (!featurename.startsWith("#")) {
@@ -381,6 +391,30 @@ public class Volume {
 			// Okay, now I'm just throwing stuff at the wall to see if it sticks.
 			vector[vocabularySize + 23] = Math.abs(sumAllWords - meanWordsPerPage) / meanWordsPerPage;
 			// absolute deviation, plus or minus, from mean num words, normalized by mean
+			
+			if (metadataFeatures.contains("#metaBiography")) {
+				vector[vocabularySize + 24] = 1;
+			} else {
+				vector[vocabularySize + 24] = 0;
+			}
+			
+			if (metadataFeatures.contains("#metaDrama")) {
+				vector[vocabularySize + 25] = 1;
+			} else {
+				vector[vocabularySize + 25] = 0;
+			}
+			
+			if (metadataFeatures.contains("#metaFiction")) {
+				vector[vocabularySize + 26] = 1;
+			} else {
+				vector[vocabularySize + 26] = 0;
+			}
+			
+			if (metadataFeatures.contains("#metaPoetry")) {
+				vector[vocabularySize + 27] = 1;
+			} else {
+				vector[vocabularySize + 27] = 0;
+			}
 			
 			String label = volumeID + "," + Integer.toString(thisPageNum);
 			DataPoint thisPoint = new DataPoint(label, vector);
