@@ -416,6 +416,9 @@ public class Volume {
 				vector[vocabularySize + 27] = 0;
 			}
 			
+			vector[vocabularySize + 28] = (double) thisPageNum;
+			vector[vocabularySize + 29] = maxPageNum - (double) thisPageNum;
+			
 			String label = volumeID + "," + Integer.toString(thisPageNum);
 			DataPoint thisPoint = new DataPoint(label, vector);
 			points.add(thisPoint);

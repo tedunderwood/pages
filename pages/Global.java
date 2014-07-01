@@ -17,7 +17,8 @@ public class Global {
 		"capRatio", "wordRatio", "distanceFromMid", "allCapRatio", "maxInitialRatio", "maxPairRatio", 
 		"wordsPerLine", "totalWords", "typeToken", "commasNorm", "periodsNorm", "quotationsNorm",
 		"exclamationsNorm", "questionsNorm", "endWithPunct", "endWithNum", "startWithName", "startWithRubric",
-		"capSequence", "capSeqNorm", "startRatio", "absWordRatio", "metaBiography", "metaDrama", "metaFiction", "metaPoetry"};
+		"capSequence", "capSeqNorm", "startRatio", "absWordRatio", "metaBiography", "metaDrama", "metaFiction", "metaPoetry",
+		"rawDistFront", "rawDistBack"};
 	
 		// "posInVol" = pagenum / totalpages
 		// "lineLengthRatio" = textlines / mean lines per page
