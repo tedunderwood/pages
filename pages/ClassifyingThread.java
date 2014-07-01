@@ -10,7 +10,7 @@ public class ClassifyingThread implements Runnable {
 	private String outputDir;
 	private int numGenres;
 	private ArrayList<String> genres;
-	private ArrayList<WekaDriver> classifiers;
+	private ArrayList<GenrePredictor> classifiers;
 	private MarkovTable markov;
 	private Vocabulary vocabulary;
 	private FeatureNormalizer normalizer;
@@ -18,7 +18,7 @@ public class ClassifyingThread implements Runnable {
 	public String predictionMetadata;
 	
 	public ClassifyingThread(String thisFile, String inputDir, String outputDir, int numGenres, 
-			ArrayList<WekaDriver> classifiers, MarkovTable markov, ArrayList<String> genres, 
+			ArrayList<GenrePredictor> classifiers, MarkovTable markov, ArrayList<String> genres, 
 			Vocabulary vocabulary, FeatureNormalizer normalizer, boolean isPairtree) {
 		this.thisFile = thisFile;
 		this.inputDir = inputDir;
@@ -63,7 +63,7 @@ public class ClassifyingThread implements Runnable {
 			}
 			
 			for (int i = 2; i < numGenres; ++i) {
-				WekaDriver classify = classifiers.get(i);
+				GenrePredictor classify = classifiers.get(i);
 				double[][] probs = classify.testNewInstances(thesePages);
 				for (int j = 0; j < numPoints; ++j) {
 					rawProbs.get(j)[i] = probs[j][0];

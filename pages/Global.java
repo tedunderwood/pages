@@ -11,6 +11,8 @@ package pages;
  * 
  */
 public class Global {
+	public static boolean allVsAll = false;
+	
 	public static final String[] STRUCTURALFEATURES = { "posInVol", "lineLengthRatio",
 		"capRatio", "wordRatio", "distanceFromMid", "allCapRatio", "maxInitialRatio", "maxPairRatio", 
 		"wordsPerLine", "totalWords", "typeToken", "commasNorm", "periodsNorm", "quotationsNorm",

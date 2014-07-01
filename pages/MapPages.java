@@ -91,6 +91,10 @@ public class MapPages {
 			Global.separateIndex();
 		}
 		
+		if (parser.isPresent("-allvsall")) {
+			Global.allVsAll = true;
+		}
+		
 		if (parser.isPresent("-bio")) {
 			Global.separateBiography();
 		}
@@ -332,7 +336,7 @@ public class MapPages {
 		MarkovTable markov = model.markov;
 		ArrayList<String> genres = model.genreList.genreLabels;
 		FeatureNormalizer normalizer = model.normalizer;
-		ArrayList<WekaDriver> classifiers = model.classifiers;
+		ArrayList<GenrePredictor> classifiers = model.classifiers;
 		int numGenres = genres.size();
 		
 		ExecutorService classifierPool = Executors.newFixedThreadPool(NTHREADS);
@@ -430,7 +434,7 @@ public class MapPages {
 		}
 		// block until all threads are completed
 		
-		ArrayList<WekaDriver> classifiers = new ArrayList<WekaDriver>(numGenres);
+		ArrayList<GenrePredictor> classifiers = new ArrayList<GenrePredictor>(numGenres);
 		
 		for (int i = 0; i < numGenres; ++ i) {
 			classifiers.add(trainingThreads.get(i).classifier);
@@ -484,7 +488,7 @@ public class MapPages {
 		MarkovTable markov = model.markov;
 		ArrayList<String> genres = model.genreList.genreLabels;
 		FeatureNormalizer normalizer = model.normalizer;
-		ArrayList<WekaDriver> classifiers = model.classifiers;
+		ArrayList<GenrePredictor> classifiers = model.classifiers;
 		int numGenres = genres.size();
 		
 		System.out.println("Model loaded. Proceeding to apply it to unknown volumes.");

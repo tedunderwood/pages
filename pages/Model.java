@@ -17,12 +17,12 @@ public class Model implements Serializable {
 	Vocabulary vocabulary;
 	FeatureNormalizer normalizer;
 	GenreList genreList; 
-	ArrayList<WekaDriver> classifiers;
+	ArrayList<GenrePredictor> classifiers;
 	MarkovTable markov;
 	private static final long serialVersionUID = 113L;
 	
 	public Model(Vocabulary vocabulary, FeatureNormalizer normalizer, GenreList genreList, 
-			ArrayList<WekaDriver> classifiers, MarkovTable markov) {
+			ArrayList<GenrePredictor> classifiers, MarkovTable markov) {
 		this.vocabulary = vocabulary;
 		this.normalizer = normalizer;
 		this.genreList = genreList;

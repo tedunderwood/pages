@@ -13,7 +13,7 @@ public class TrainingThread implements Runnable {
 	private ArrayList<DataPoint> datapoints;
 	private String ridgeParameter;
 	private boolean verbose;
-	public WekaDriver classifier;
+	public GenrePredictor classifier;
 	
 	public TrainingThread(GenreList genres, ArrayList<String> features, String genreToIdentify, 
 			ArrayList<DataPoint> datapoints, String ridgeParameter, boolean verbose, boolean undersample) {
@@ -72,10 +72,13 @@ public class TrainingThread implements Runnable {
 	@Override
 	public void run() {
 		if (genreToIdentify.equals("dummy")) {
-			this.classifier = new WekaDriver("dummy");
+			this.classifier = new GenrePredictor("dummy");
+		}
+		else if (Global.allVsAll) {
+			this.classifier = new GenrePredictorAllVsAll(genres, features, genreToIdentify, datapoints, ridgeParameter, verbose);
 		}
 		else {
-			this.classifier = new WekaDriver(genres, features, genreToIdentify, datapoints, ridgeParameter, verbose);
+			this.classifier = new GenrePredictor(genres, features, genreToIdentify, datapoints, ridgeParameter, verbose);
 		}
 	}
 
