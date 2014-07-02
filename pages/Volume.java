@@ -405,7 +405,7 @@ public class Volume {
 			}
 			
 			if (metadataFeatures.contains("#metaFiction")) {
-				vector[vocabularySize + 26] = 1;
+				vector[vocabularySize + 26] = sumAllWords / meanWordsPerPage;
 			} else {
 				vector[vocabularySize + 26] = 0;
 			}
@@ -418,6 +418,18 @@ public class Volume {
 			
 			vector[vocabularySize + 28] = (double) thisPageNum;
 			vector[vocabularySize + 29] = maxPageNum - (double) thisPageNum;
+			
+			if (metadataFeatures.contains("#locstartsP")) {
+				vector[vocabularySize + 30] = 1;
+			} else {
+				vector[vocabularySize + 30] = 0;
+			}
+			
+			if (metadataFeatures.contains("#locnotP")) {
+				vector[vocabularySize + 31] = sumAllWords / meanWordsPerPage;
+			} else {
+				vector[vocabularySize + 31] = 0;
+			}
 			
 			String label = volumeID + "," + Integer.toString(thisPageNum);
 			DataPoint thisPoint = new DataPoint(label, vector);
