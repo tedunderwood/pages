@@ -36,7 +36,7 @@ public class Volume {
 	int maxPageNum;
 	int totalWords;
 	ArrayList<String[]> sparseTable;
-	HashSet<String> metadataFeatures;
+	HashMap<String, Double> metadataFeatures;
 	
 	public Volume(String volumeID) {
 		this.volumeID = volumeID;
@@ -46,7 +46,7 @@ public class Volume {
 		maxPageNum = 0;
 		totalWords = 0;
 		sparseTable = new ArrayList<String[]>();
-		metadataFeatures = new HashSet<String>();
+		metadataFeatures = new HashMap<String, Double>();
 	}
 	/** 
 	 * This method accepts a line from the database, already parsed into a
@@ -71,10 +71,11 @@ public class Volume {
 		
 		int pageNum = Integer.parseInt(feature[0]);
 		String featurename = feature[1];
+		int count = Integer.parseInt(feature[2]);
 		
 		if (pageNum < 0) {
 			// This is a special volume-level feature that will be attached to all pages
-			metadataFeatures.add(featurename);
+			metadataFeatures.put(featurename, (double) count);
 			return;
 		}
 		
@@ -82,8 +83,6 @@ public class Volume {
 			listOfPages.add(pageNum);
 			numberOfPages = listOfPages.size();
 		}
-		
-		int count = Integer.parseInt(feature[2]);
 		
 		if (!featurename.startsWith("#")) {
 			totalWords += count; 
@@ -367,15 +366,18 @@ public class Volume {
 			// type-token ratio
 			vector[vocabularySize + 11] = commas / sumAllWords;
 			// commas normalized for wordcount
-			vector[vocabularySize + 12] = periods / sumAllWords;
+			vector[vocabularySize + 12] = 0;
+					// periods / sumAllWords;
 			// periods normalized for wordcount
-			vector[vocabularySize + 13] = quotations / sumAllWords;
+			vector[vocabularySize + 13] = 0;
+					// quotations / sumAllWords;
 			// quotation marks normalized for wordcount
 			vector[vocabularySize + 14] = exclamationpoints / sumAllWords;
 			// exclamation points normalized for wordcount
 			vector[vocabularySize + 15] = questionmarks / sumAllWords;
 			// question marks normalized for wordcount
-			vector[vocabularySize + 16] = endwpunct / textlines;
+			vector[vocabularySize + 16] = 0;
+					// endwpunct / textlines;
 			// Proportion of lines ending with punctuation.
 			vector[vocabularySize + 17] = endwnumeral / textlines;
 			// Proportion of lines ending with a digit as either of last two chars.
@@ -387,48 +389,54 @@ public class Volume {
 			// Largest number of capitalized initials in alphabetical sequence.
 			vector[vocabularySize + 21] = sequentialcaps / (caplines + 0.0001);
 			// Sequential caps normalized for the number of capitalized lines.
-			vector[vocabularySize + 22] = ((startwname +1) * (startwrubric+1)) / (wordnotinvocab + 1);
+			vector[vocabularySize + 22] = 0;
+					// ((startwname +1) * (startwrubric+1)) / (wordnotinvocab + 1);
 			// Okay, now I'm just throwing stuff at the wall to see if it sticks.
-			vector[vocabularySize + 23] = Math.abs(sumAllWords - meanWordsPerPage) / meanWordsPerPage;
+			vector[vocabularySize + 23] = 0;
+					// Math.abs(sumAllWords - meanWordsPerPage) / meanWordsPerPage;
 			// absolute deviation, plus or minus, from mean num words, normalized by mean
 			
-			if (metadataFeatures.contains("#metaBiography")) {
+			if (metadataFeatures.containsKey("#metaBiography")) {
 				vector[vocabularySize + 24] = 1;
 			} else {
 				vector[vocabularySize + 24] = 0;
 			}
-			
-			if (metadataFeatures.contains("#metaDrama")) {
-				vector[vocabularySize + 25] = 1;
-			} else {
-				vector[vocabularySize + 25] = 0;
-			}
-			
-			if (metadataFeatures.contains("#metaFiction")) {
-				vector[vocabularySize + 26] = sumAllWords / meanWordsPerPage;
+//			
+//			if (metadataFeatures.containsKey("#metaDrama")) {
+//				vector[vocabularySize + 25] = 1;
+//			} else {
+//				vector[vocabularySize + 25] = 0;
+//			}
+//			
+			if (metadataFeatures.containsKey("#metaFiction")) {
+				vector[vocabularySize + 26] = 1;
 			} else {
 				vector[vocabularySize + 26] = 0;
 			}
+//			
+//			if (metadataFeatures.containsKey("#metaPoetry")) {
+//				vector[vocabularySize + 27] = 1;
+//			} else {
+//				vector[vocabularySize + 27] = 0;
+//			}
+			// vector[vocabularySize + 24] = 0;
+			vector[vocabularySize + 25] = 0;
+			// vector[vocabularySize + 26] = 0;
+			vector[vocabularySize + 27] = 0;
 			
-			if (metadataFeatures.contains("#metaPoetry")) {
-				vector[vocabularySize + 27] = 1;
+			vector[vocabularySize + 28] = 0;
+			vector[vocabularySize + 29] = 0;
+			
+			if (metadataFeatures.containsKey("##litprob")) {
+				vector[vocabularySize + 30] = metadataFeatures.get("#litprob");
 			} else {
-				vector[vocabularySize + 27] = 0;
+				vector[vocabularySize + 30] = 0.0d;
 			}
 			
-			vector[vocabularySize + 28] = (double) thisPageNum;
-			vector[vocabularySize + 29] = maxPageNum - (double) thisPageNum;
-			
-			if (metadataFeatures.contains("#locstartsP")) {
-				vector[vocabularySize + 30] = 1;
+			if (metadataFeatures.containsKey("##bioprob")) {
+				vector[vocabularySize + 31] = metadataFeatures.get("#bioprob");
 			} else {
-				vector[vocabularySize + 30] = 0;
-			}
-			
-			if (metadataFeatures.contains("#locnotP")) {
-				vector[vocabularySize + 31] = sumAllWords / meanWordsPerPage;
-			} else {
-				vector[vocabularySize + 31] = 0;
+				vector[vocabularySize + 31] = 0.0d;
 			}
 			
 			String label = volumeID + "," + Integer.toString(thisPageNum);

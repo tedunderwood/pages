@@ -18,7 +18,7 @@ public class Global {
 		"wordsPerLine", "totalWords", "typeToken", "commasNorm", "periodsNorm", "quotationsNorm",
 		"exclamationsNorm", "questionsNorm", "endWithPunct", "endWithNum", "startWithName", "startWithRubric",
 		"capSequence", "capSeqNorm", "startRatio", "absWordRatio", "metaBiography", "metaDrama", "metaFiction", "metaPoetry",
-		"rawDistFront", "rawDistBack", "locstartsP", "locnotP"};
+		"rawDistFront", "rawDistBack", "litprob", "bioprob"};
 	
 		// "posInVol" = pagenum / totalpages
 		// "lineLengthRatio" = textlines / mean lines per page
