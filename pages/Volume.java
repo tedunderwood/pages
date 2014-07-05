@@ -401,42 +401,26 @@ public class Volume {
 			} else {
 				vector[vocabularySize + 24] = 0;
 			}
-//			
-//			if (metadataFeatures.containsKey("#metaDrama")) {
-//				vector[vocabularySize + 25] = 1;
-//			} else {
-//				vector[vocabularySize + 25] = 0;
-//			}
-//			
+
 			if (metadataFeatures.containsKey("#metaFiction")) {
-				vector[vocabularySize + 26] = 1;
+				vector[vocabularySize + 25] = 1;
 			} else {
-				vector[vocabularySize + 26] = 0;
+				vector[vocabularySize + 25] = 0;
 			}
-//			
-//			if (metadataFeatures.containsKey("#metaPoetry")) {
-//				vector[vocabularySize + 27] = 1;
-//			} else {
-//				vector[vocabularySize + 27] = 0;
-//			}
+
 			// vector[vocabularySize + 24] = 0;
-			vector[vocabularySize + 25] = 0;
-			// vector[vocabularySize + 26] = 0;
-			vector[vocabularySize + 27] = 0;
-			
-			vector[vocabularySize + 28] = 0;
-			vector[vocabularySize + 29] = 0;
+			// vector[vocabularySize + 25] = 0;
 			
 			if (metadataFeatures.containsKey("##litprob")) {
-				vector[vocabularySize + 30] = metadataFeatures.get("#litprob");
+				vector[vocabularySize + 26] = metadataFeatures.get("#litprob");
 			} else {
-				vector[vocabularySize + 30] = 0.0d;
+				vector[vocabularySize + 26] = 0.0d;
 			}
 			
 			if (metadataFeatures.containsKey("##bioprob")) {
-				vector[vocabularySize + 31] = metadataFeatures.get("#bioprob");
+				vector[vocabularySize + 27] = metadataFeatures.get("#bioprob");
 			} else {
-				vector[vocabularySize + 31] = 0.0d;
+				vector[vocabularySize + 27] = 0.0d;
 			}
 			
 			String label = volumeID + "," + Integer.toString(thisPageNum);

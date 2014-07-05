@@ -36,7 +36,7 @@ public class MapPages {
 	static int NTHREADS = 10;
 	static int NFOLDS = 5;
 	static int minutesToWait = 30;
-	static String RIDGE = "10";
+	static String RIDGE = "32";
 	static int featureCount;
 	static int numGenres;
 	static int numInstances;
