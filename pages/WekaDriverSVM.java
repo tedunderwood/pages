@@ -26,7 +26,7 @@ public class WekaDriverSVM implements Serializable {
 	String ridgeParameter;
 	String classLabel;
 	double[][] memberProbs;
-	private static final long serialVersionUID = 115L;
+	private static final long serialVersionUID = 132L;
 	
 	public WekaDriverSVM (String genre) {
 		// Returns a dummy class to fill an unused spot in the ArrayList.
@@ -84,10 +84,10 @@ public class WekaDriverSVM implements Serializable {
 		if (verbose) {
 			writer.print(genreToIdentify + " count: " + poscount + "\n");
 		}
-		System.out.println(genreToIdentify + " count: " + poscount);
+		System.out.println("SVM: " + genreToIdentify + " count: " + poscount);
 		
 		try {
-			String[] options = {"-M", "-V", "3", "-K", "weka.classifiers.functions.supportVector.PolyKernel -E 2.0"};
+			String[] options = {"-M", "-V", "3", "-N", "2", "-P", ".0001", "-K", "weka.classifiers.functions.supportVector.PolyKernel -E 1.0"};
 			svm = Classifier.forName("weka.classifiers.functions.SMO", options);
 			svm.buildClassifier(trainingSet);
 			if (verbose) {
@@ -159,10 +159,12 @@ public class WekaDriverSVM implements Serializable {
 			for (int i = 0; i < testSize; ++i) {
 				Instance anInstance = testSet.get(i);
 				testProbs[i] = svm.distributionForInstance(anInstance);
+				// System.out.println(i);
 			}
 		}
-		catch (Exception e) {
-			System.out.println(e);
+		catch (Throwable t) {
+			t.printStackTrace();
+			System.out.println(t);
 		}
 		
 		return testProbs;

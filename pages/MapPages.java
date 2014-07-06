@@ -339,28 +339,30 @@ public class MapPages {
 		ArrayList<GenrePredictor> classifiers = model.classifiers;
 		int numGenres = genres.size();
 		
-		ExecutorService classifierPool = Executors.newFixedThreadPool(NTHREADS);
+//		ExecutorService classifierPool = Executors.newFixedThreadPool(1);
+		// I'm taking out the executor service for the classification stage, because reusing the same classifiers
+		// in multiple threads is causing a concurrency bug.
 		ArrayList<ClassifyingThread> filesToClassify = new ArrayList<ClassifyingThread>(volsToProcess.size());
 		
 		for (String thisFile : volsToProcess) {
 			ClassifyingThread fileClassifier = new ClassifyingThread(thisFile, inputDir, dirForOutput, numGenres, 
 					classifiers, markov, genres, vocabulary, normalizer, false);
 			// The final parameter == false because this will never be run in a pairtree context.
-			
+			fileClassifier.run();
 			filesToClassify.add(fileClassifier);
 		}
 		
-		for (ClassifyingThread fileClassifier: filesToClassify) {
-			classifierPool.execute(fileClassifier);
-		}
-		
-		classifierPool.shutdown();
-		try {
-			classifierPool.awaitTermination(6000, TimeUnit.SECONDS);
-		}
-		catch (InterruptedException e) {
-			System.out.println("Helpful error message: Execution was interrupted.");
-		}
+//		for (ClassifyingThread fileClassifier: filesToClassify) {
+//			classifierPool.execute(fileClassifier);
+//		}
+//		
+//		classifierPool.shutdown();
+//		try {
+//			classifierPool.awaitTermination(6000, TimeUnit.SECONDS);
+//		}
+//		catch (InterruptedException e) {
+//			System.out.println("Helpful error message: Execution was interrupted.");
+//		}
 		// block until all threads are completed
 		
 		

@@ -27,6 +27,9 @@ public class WekaDriver implements java.io.Serializable {
 	double[][] memberProbs;
 	private static final long serialVersionUID = 115L;
 	
+	public WekaDriver() {
+	}
+	
 	public WekaDriver (String genre) {
 		// Returns a dummy class to fill an unused spot in the ArrayList.
 		// TODO: Refactor so this is not necessary.

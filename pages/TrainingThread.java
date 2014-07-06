@@ -79,6 +79,7 @@ public class TrainingThread implements Runnable {
 		}
 		else {
 			this.classifier = new GenrePredictorSVM(genres, features, genreToIdentify, datapoints, ridgeParameter, verbose);
+			System.out.println("Construction worked " + classifier.genre);
 		}
 	}
 

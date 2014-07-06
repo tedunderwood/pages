@@ -16,25 +16,23 @@ import java.util.ArrayList;
  */
 public class GenrePredictor implements Serializable {
 	private static final long serialVersionUID = 121L;
-	private WekaDriver theClassifier;
+	public String genre;
 	
 	public GenrePredictor() {
 		// purely for subclassing
 	}
 	
-	public GenrePredictor (GenreList genres, ArrayList<String> features, String genreToIdentify, 
-			ArrayList<DataPoint> datapoints, String ridgeParameter, boolean verbose) {
-		
-		theClassifier = new WekaDriver(genres, features, genreToIdentify, datapoints, ridgeParameter, verbose);
-	}
-	
-	public GenrePredictor (String dummyString) {
-		theClassifier = new WekaDriver(dummyString);
+	public GenrePredictor(String aGenre) {
+		this.genre = aGenre;
 	}
 	
 	public double[][] testNewInstances(ArrayList<DataPoint> pointsToTest) {
-		double[][] probabilities = theClassifier.testNewInstances(pointsToTest);
+		double[][] probabilities = new double[1][1];
 		return probabilities;
+	}
+	
+	public String reportStatus() {
+		return "Placeholder.";
 	}
 
 }
