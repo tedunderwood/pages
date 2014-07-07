@@ -87,7 +87,7 @@ public class WekaDriverSVM implements Serializable {
 		System.out.println("SVM: " + genreToIdentify + " count: " + poscount);
 		
 		try {
-			String[] options = {"-M", "-V", "3", "-N", "2", "-P", ".0001", "-K", "weka.classifiers.functions.supportVector.PolyKernel -E 1.0"};
+			String[] options = {"-M", "-V", "3", "-N", "2", "-P", ".000001", "-C", "1.4", "-K", "weka.classifiers.functions.supportVector.PolyKernel -E 1.0"};
 			svm = Classifier.forName("weka.classifiers.functions.SMO", options);
 			svm.buildClassifier(trainingSet);
 			if (verbose) {
@@ -159,7 +159,7 @@ public class WekaDriverSVM implements Serializable {
 			for (int i = 0; i < testSize; ++i) {
 				Instance anInstance = testSet.get(i);
 				testProbs[i] = svm.distributionForInstance(anInstance);
-				// System.out.println(i);
+				System.out.println(i);
 			}
 		}
 		catch (Throwable t) {

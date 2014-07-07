@@ -37,14 +37,14 @@ public class GenrePredictorSVM extends GenrePredictor implements Serializable {
 		}
 		
 		double ratio = outOfClassCount / (double) inClassCount;
-		int ceiling = 1000;
+		int ceiling = 8000;
 		int inClassTarget = inClassCount;
 		int outClassTarget = outOfClassCount;
 		if (inClassTarget > ceiling) {
 			inClassTarget = ceiling;
 			outClassTarget = (int) Math.floor(ratio * ceiling);
 		}
-		if (outClassTarget > 10000) outClassTarget = 10000;
+		if (outClassTarget > 100000) outClassTarget = 100000;
 		
 		ArrayList<DataPoint> subset = new ArrayList<DataPoint>();
 		subset.addAll(selectFrom(inClass, inClassTarget));
