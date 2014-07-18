@@ -2,12 +2,9 @@
  * 
  */
 package crf;
-import java.util.ArrayList;
-// import java.io.File;
+
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
-import weka.core.Attribute;
-import weka.core.FastVector;
 import weka.core.Instances;
 import weka.core.Instance;
 

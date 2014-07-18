@@ -52,6 +52,7 @@ public class CRF {
 		int numIDVals = masterDataset.numDistinctValues(idIndex);
 		int foldSize = numIDVals / numFolds;
 		int numInstances = masterDataset.numInstances();
+		double[][] allResults = new double[numInstances][4];
 		
 		// Now we begin a loop that will repeat as many times
 		// as we have "folds" in our crossvalidation. E.g., in
@@ -111,9 +112,33 @@ public class CRF {
 			
 			// Create a classifier.
 			Fold classifier = new Fold(trainingSet, true);
+			
+			// Test the testset, and
 			double[][] results = classifier.testNewInstances(testSet);
 			
-			
+			for (int offset = 0; offset < testSetSize; ++ offset) {
+				int absoluteIndex = startInstance + offset;
+				allResults[absoluteIndex] = results[offset];
+			}
+		
+		// This ends the loop over "folds" of crossvalidation.
 		}
+	
+		// Now to output results.
+		Attribute classAttribute = masterDataset.classAttribute();
+		String[] outLines = new String[numInstances];
+		for (int i = 0; i < numInstances; ++i) {
+			Instance instance = masterDataset.instance(i);
+			String classValue = instance.stringValue(classAttribute);
+			String outLine = classValue;
+			double[] probs = allResults[i];
+			for (double prob : probs) {
+				outLine = outLine + "\t" + Double.toString(prob);
+			}
+			outLines[i] = outLine;
+		}
+		
+		LineWriter writer = new LineWriter("/Volumes/TARDIS/output/forests/probabilities.tsv", false);
+		writer.send(outLines);
 	}
 }
