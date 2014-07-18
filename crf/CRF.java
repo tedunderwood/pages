@@ -111,9 +111,10 @@ public class CRF {
 			}
 			
 			// Create a classifier.
-			Fold classifier = new Fold(trainingSet, true);
+			Fold classifier = new Fold(trainingSet, f, true);
 			
-			// Test the testset, and
+			// Test the testset, and copy the results to the appropriate location
+			// in the master results array.
 			double[][] results = classifier.testNewInstances(testSet);
 			
 			for (int offset = 0; offset < testSetSize; ++ offset) {

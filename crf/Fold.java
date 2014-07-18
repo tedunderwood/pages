@@ -20,12 +20,12 @@ public class Fold implements java.io.Serializable {
 	double[][] memberProbs;
 	private static final long serialVersionUID = 145L;
 	
-	public Fold (Instances trainingSet, boolean verbose) {
+	public Fold (Instances trainingSet, int foldNumber, boolean verbose) {
 		this.trainingSet = trainingSet;
 		numInstances = trainingSet.numInstances();
 		memberProbs = new double[numInstances][4];
 		
-		String outpath = "/Users/tunder/output/forests/";
+		String outpath = "/Volumes/TARDIS/output/forests/fold" + Integer.toString(foldNumber) + ".txt";
 		
 		LineWriter writer = new LineWriter(outpath, true);
 		
