@@ -45,7 +45,7 @@ public class CRF {
 		// of Instances.
 		
 		// First find that ID attribute.
-		Attribute idAttribute = masterDataset.attribute("ID");
+		Attribute idAttribute = masterDataset.attribute("id");
 		int idIndex = idAttribute.index();
 		
 		// How many distinct values does it have?
@@ -101,14 +101,33 @@ public class CRF {
 			int trainingSetSize = numInstances - testSetSize;
 			Instances trainingSet = new Instances(masterDataset, trainingSetSize);
 			
+			System.out.println("Creating training set.");
 			// Then we iterate through the master Dataset and add instances one by one.
 			for (int i = 0; i < numInstances; ++i) {
 				Instance thisInstance = masterDataset.instance(i);
-				int idVal = (int) thisInstance.value(idIndex);
-				if (idVal < startInstance | idVal >= endInstance) {
+				if (i < startInstance | i >= endInstance) {
 					trainingSet.add(thisInstance);
 				}
 			}
+			
+			trainingSet.deleteAttributeAt(idIndex);
+			trainingSet.setClassIndex(trainingSet.numAttributes() - 1);
+			System.out.println("Num instances " + Integer.toString(trainingSet.numInstances()));
+			System.out.println("Start ID " + Integer.toString(startID));
+			System.out.println("End ID " + Integer.toString(endID));
+			System.out.println("Start Instance " + Integer.toString(startInstance));
+			System.out.println("End Instance " + Integer.toString(endInstance));
+//			for (int i = 0; i < trainingSet.numInstances(); ++ i) {
+//				Instance inst = trainingSet.instance(i);
+//				if (inst.classIsMissing()) System.out.println("missing");
+//				else System.out.println(inst.stringValue(inst.classAttribute()));
+//			}
+			
+			testSet.deleteAttributeAt(idIndex);
+			testSet.setClassIndex(trainingSet.numAttributes() - 1);
+			
+			System.out.println("Fold: " + Integer.toString(f));
+			System.out.println("Training set size: " + Integer.toString(trainingSetSize));
 			
 			// Create a classifier.
 			Fold classifier = new Fold(trainingSet, f, true);
@@ -116,6 +135,8 @@ public class CRF {
 			// Test the testset, and copy the results to the appropriate location
 			// in the master results array.
 			double[][] results = classifier.testNewInstances(testSet);
+			System.out.println("Results length: ");
+			System.out.println(results.length);
 			
 			for (int offset = 0; offset < testSetSize; ++ offset) {
 				int absoluteIndex = startInstance + offset;

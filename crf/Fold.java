@@ -29,6 +29,8 @@ public class Fold implements java.io.Serializable {
 		
 		LineWriter writer = new LineWriter(outpath, true);
 		
+		System.out.println(trainingSet.classIndex());
+		
 		try {
 			String[] options = {"-I", "50", "-K", "5"};
 			forest = Classifier.forName("weka.classifiers.trees.RandomForest", options);
@@ -68,10 +70,11 @@ public class Fold implements java.io.Serializable {
 	public double[][] testNewInstances(Instances testSet) {
 
 		int testSize = testSet.numInstances();
+		System.out.println(testSize);
 		double[][] testProbs = new double[testSize][4];
 		
 		try {
-			for (int i = 0; i < numInstances; ++i) {
+			for (int i = 0; i < testSet.numInstances(); ++i) {
 				Instance instance = testSet.instance(i);
 				testProbs[i] = forest.distributionForInstance(instance);
 			}
