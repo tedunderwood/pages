@@ -78,7 +78,7 @@ public class TrainingThread implements Runnable {
 			this.classifier = new GenrePredictorAllVsAll(genres, features, genreToIdentify, datapoints, ridgeParameter, verbose);
 		}
 		else {
-			this.classifier = new GenrePredictorSVM(genres, features, genreToIdentify, datapoints, ridgeParameter, verbose);
+			this.classifier = new GenrePredictorForest(genres, features, genreToIdentify, datapoints, ridgeParameter, verbose);
 			System.out.println("Construction worked " + classifier.genre);
 		}
 	}
