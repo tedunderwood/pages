@@ -112,11 +112,7 @@ public class CRF {
 			
 			trainingSet.deleteAttributeAt(idIndex);
 			trainingSet.setClassIndex(trainingSet.numAttributes() - 1);
-			System.out.println("Num instances " + Integer.toString(trainingSet.numInstances()));
-			System.out.println("Start ID " + Integer.toString(startID));
-			System.out.println("End ID " + Integer.toString(endID));
-			System.out.println("Start Instance " + Integer.toString(startInstance));
-			System.out.println("End Instance " + Integer.toString(endInstance));
+			
 //			for (int i = 0; i < trainingSet.numInstances(); ++ i) {
 //				Instance inst = trainingSet.instance(i);
 //				if (inst.classIsMissing()) System.out.println("missing");
@@ -135,8 +131,6 @@ public class CRF {
 			// Test the testset, and copy the results to the appropriate location
 			// in the master results array.
 			double[][] results = classifier.testNewInstances(testSet);
-			System.out.println("Results length: ");
-			System.out.println(results.length);
 			
 			for (int offset = 0; offset < testSetSize; ++ offset) {
 				int absoluteIndex = startInstance + offset;

@@ -32,7 +32,7 @@ public class Fold implements java.io.Serializable {
 		System.out.println(trainingSet.classIndex());
 		
 		try {
-			String[] options = {"-I", "50", "-K", "5"};
+			String[] options = {"-I", "100", "-K", "5"};
 			forest = Classifier.forName("weka.classifiers.trees.RandomForest", options);
 			forest.buildClassifier(trainingSet);
 			if (verbose) {
@@ -70,7 +70,6 @@ public class Fold implements java.io.Serializable {
 	public double[][] testNewInstances(Instances testSet) {
 
 		int testSize = testSet.numInstances();
-		System.out.println(testSize);
 		double[][] testProbs = new double[testSize][4];
 		
 		try {
