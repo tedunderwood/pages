@@ -52,47 +52,42 @@ public class GenrePredictorMulticlass extends GenrePredictor implements
 		int numPoints = thisVolume.numPoints;
 		
 		if (numPoints > 0) {
-			try {
-				ArrayList<DataPoint> thesePages = thisVolume.datapoints;
-				ArrayList<double[]> rawProbs = new ArrayList<double[]>(numPoints);
-				double[][] probs = testNewInstances(thesePages);
-				for (int i = 0; i < numGenres; ++i) {
-					for (int j = 0; j < numPoints; ++j) {
-						rawProbs.get(j)[i] = probs[j][i];
-					}
+			ArrayList<DataPoint> thesePages = thisVolume.datapoints;
+			ArrayList<double[]> rawProbs = new ArrayList<double[]>(numPoints);
+			double[][] probs = testNewInstances(thesePages);
+			for (int i = 0; i < numGenres; ++i) {
+				for (int j = 0; j < numPoints; ++j) {
+					rawProbs.get(j)[i] = probs[j][i];
 				}
-				
-				ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
-				// smoothedProbs = ForwardBackward.smooth(smoothedProbs, markov);
-				// This is really silly, but in practice it can work: run the Markov smoothing twice!
-		
-				ClassificationResult rawResult = new ClassificationResult(rawProbs, numGenres, genres);
-				ClassificationResult smoothedResult = new ClassificationResult(smoothedProbs, numGenres, genres);
-				
-				ArrayList<String> rawPredictions = rawResult.predictions;
-				ArrayList<String> predictions = smoothedResult.predictions;
-				
-				String outFile = thisFile + ".predict";
-				String outPath = outputDir + "/" + outFile;
-				
-				LineWriter writer = new LineWriter(outPath, false);
-		
-				String[] outlines = new String[numPoints];
-				for (int i = 0; i < numPoints; ++i) {
-					outlines[i] = thesePages.get(i).label + "\t" + rawPredictions.get(i) + "\t" + predictions.get(i);
-					for (int j = 0; j < genres.size(); ++j) {
-						double[] thisPageProbs = smoothedProbs.get(i);
-						outlines[i] = outlines[i] + "\t" + genres.get(j) + "::" + Double.toString(thisPageProbs[j]);
-					}
+			}
+			
+			ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
+			// smoothedProbs = ForwardBackward.smooth(smoothedProbs, markov);
+			// This is really silly, but in practice it can work: run the Markov smoothing twice!
+	
+			ClassificationResult rawResult = new ClassificationResult(rawProbs, numGenres, genres);
+			ClassificationResult smoothedResult = new ClassificationResult(smoothedProbs, numGenres, genres);
+			
+			ArrayList<String> rawPredictions = rawResult.predictions;
+			ArrayList<String> predictions = smoothedResult.predictions;
+			
+			String outFile = thisFile + ".predict";
+			String outPath = outputDir + "/" + outFile;
+			
+			LineWriter writer = new LineWriter(outPath, false);
+	
+			String[] outlines = new String[numPoints];
+			for (int i = 0; i < numPoints; ++i) {
+				outlines[i] = thesePages.get(i).label + "\t" + rawPredictions.get(i) + "\t" + predictions.get(i);
+				for (int j = 0; j < genres.size(); ++j) {
+					double[] thisPageProbs = smoothedProbs.get(i);
+					outlines[i] = outlines[i] + "\t" + genres.get(j) + "::" + Double.toString(thisPageProbs[j]);
 				}
-				writer.send(outlines);
-				
-				this.predictionMetadata = thisFile + "\t" + Double.toString(smoothedResult.averageMaxProb) + "\t" +
-						Double.toString(smoothedResult.averageGap);
 			}
-			catch (Throwable t) {
-				System.out.println(t);
-			}
+			writer.send(outlines);
+			
+			this.predictionMetadata = thisFile + "\t" + Double.toString(smoothedResult.averageMaxProb) + "\t" +
+					Double.toString(smoothedResult.averageGap);
 		}
 		else {
 			this.predictionMetadata = thisFile + "\tNA\tNA";

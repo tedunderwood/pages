@@ -23,7 +23,6 @@ public class WekaDriverMulticlass implements java.io.Serializable {
 	int numFeatures;
 	int numInstances;
 	int numGenres;
-	String classLabel;
 	double[][] memberProbs;
 	
 	private static final long serialVersionUID = 163L;
@@ -55,7 +54,6 @@ public class WekaDriverMulticlass implements java.io.Serializable {
 		trainingSet = new Instances("multiclassForest", featureNames, numInstances);
 		trainingSet.setClassIndex(numFeatures);
 		
-		int poscount = 0;
 		for (DataPoint aPoint : datapoints) {
 			Instance instance = new Instance(numFeatures + 1);
 			for (int i = 0; i < numFeatures; ++i) {
@@ -69,7 +67,7 @@ public class WekaDriverMulticlass implements java.io.Serializable {
 		System.out.println("Forest: multiclass.");
 		
 		try {
-			String[] options = {"-I", "110", "-K", "22"};
+			String[] options = {"-I", "10", "-K", "10"};
 			forest = Classifier.forName("weka.classifiers.trees.RandomForest", options);
 			forest.buildClassifier(trainingSet);
 			if (verbose) {
@@ -106,9 +104,8 @@ public class WekaDriverMulticlass implements java.io.Serializable {
 	
 	public double[][] testNewInstances(ArrayList<DataPoint> pointsToTest) {
 
-		String genreToIdentify = classLabel;
 		int testSize = pointsToTest.size();
-		double[][] testProbs = new double[testSize][2];
+		double[][] testProbs = new double[testSize][numGenres];
 		
 		ArrayList<Instance> testSet = new ArrayList<Instance>(testSize);
 		
@@ -118,12 +115,9 @@ public class WekaDriverMulticlass implements java.io.Serializable {
 			for (int i = 0; i < numFeatures; ++i) {
 				instance.setValue((Attribute)featureNames.elementAt(i), aPoint.vector[i]);
 			}
-			if (aPoint.genre.equals(genreToIdentify)) {
-				instance.setValue((Attribute)featureNames.elementAt(numFeatures), "positive");
-			}
-			else {
-				instance.setValue((Attribute)featureNames.elementAt(numFeatures), "negative");
-			}
+			instance.setValue((Attribute)featureNames.elementAt(numFeatures), "poe");
+			// It's not true that all new instances are poetry! But it doesn't really matter
+			// what nominal class we give these instances; we're classifying them.
 			testSet.add(instance);
 		}
 		
