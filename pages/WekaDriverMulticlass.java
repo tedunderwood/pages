@@ -16,32 +16,25 @@ import weka.core.Instances;
  * @author tunder
  *
  */
-public class WekaDriverForest implements java.io.Serializable {
+public class WekaDriverMulticlass implements java.io.Serializable {
 	Classifier forest;
 	Instances trainingSet;
 	FastVector featureNames;
 	int numFeatures;
 	int numInstances;
+	int numGenres;
 	String classLabel;
 	double[][] memberProbs;
 	
-	private static final long serialVersionUID = 151L;
+	private static final long serialVersionUID = 163L;
 	
-	public WekaDriverForest (String genre) {
-		// Returns a dummy class to fill an unused spot in the ArrayList.
-		// TODO: Refactor so this is not necessary.
-		this.classLabel = genre;
-	}
-	
-	public WekaDriverForest (GenreList genres, ArrayList<String> features, String genreToIdentify, ArrayList<DataPoint> datapoints, boolean verbose) {
+	public WekaDriverMulticlass (GenreList genres, ArrayList<String> features, ArrayList<DataPoint> datapoints, boolean verbose) {
 		numFeatures = features.size();
 		numInstances = datapoints.size();
-		this.classLabel = genreToIdentify;
-		memberProbs = new double[numInstances][2];
+		numGenres = genres.getSize();
+		memberProbs = new double[numInstances][numGenres];
 		
-		String outpath = "/Users/tunder/output/classifiers/" + classLabel;
-		// File existingVersion = new File(outpath);
-		// if (existingVersion.exists()) existingVersion.delete();
+		String outpath = "/Users/tunder/output/classifiers/multiclass.txt";
 		
 		LineWriter writer = new LineWriter(outpath, true);
 		
@@ -52,15 +45,15 @@ public class WekaDriverForest implements java.io.Serializable {
 		}
 		
 		// Now we add the class attribute.
-		FastVector classValues = new FastVector(2);
-		classValues.addElement("positive");
-		classValues.addElement("negative");
+		FastVector classValues = new FastVector(numGenres);
+		for (String genre : genres.genreLabels) {
+			classValues.addElement(genre);
+		}
 		Attribute classAttribute = new Attribute("ClassAttribute", classValues);
 		featureNames.addElement(classAttribute);
 		
-		trainingSet = new Instances(genreToIdentify, featureNames, numInstances);
+		trainingSet = new Instances("multiclassForest", featureNames, numInstances);
 		trainingSet.setClassIndex(numFeatures);
-		ArrayList<Instance> simpleListOfInstances = new ArrayList<Instance>(numInstances);
 		
 		int poscount = 0;
 		for (DataPoint aPoint : datapoints) {
@@ -68,21 +61,12 @@ public class WekaDriverForest implements java.io.Serializable {
 			for (int i = 0; i < numFeatures; ++i) {
 				instance.setValue((Attribute)featureNames.elementAt(i), aPoint.vector[i]);
 			}
-			if (aPoint.genre.equals(genreToIdentify)) {
-				instance.setValue((Attribute)featureNames.elementAt(numFeatures), "positive");
-				poscount += 1;
-			}
-			else {
-				instance.setValue((Attribute)featureNames.elementAt(numFeatures), "negative");
-			}
+	
+			instance.setValue((Attribute)featureNames.elementAt(numFeatures), aPoint.genre);
 			trainingSet.add(instance);
-			simpleListOfInstances.add(instance);
 		}
 		
-		if (verbose) {
-			writer.print(genreToIdentify + " count: " + poscount + "\n");
-		}
-		System.out.println("Forest: " + genreToIdentify + " count: " + poscount);
+		System.out.println("Forest: multiclass.");
 		
 		try {
 			String[] options = {"-I", "110", "-K", "22"};
@@ -100,21 +84,10 @@ public class WekaDriverForest implements java.io.Serializable {
 				writer.print(strSummary);
 			}
 			
-			for (int i = 0; i < numInstances; ++i) {
-				Instance anInstance = simpleListOfInstances.get(i);
-				anInstance.setDataset(trainingSet);
-				memberProbs[i] = forest.distributionForInstance(anInstance);
-			}
 			// Get the confusion matrix
-			double[][] cmMatrix = eTest.confusionMatrix();
+			String strMatrix = eTest.toMatrixString();
 			if (verbose) {
-				writer.print("      Really " + genreToIdentify + "     other.");
-				writer.print("===================================");
-				String[] lineheads = {"ID'd " + genreToIdentify+ ":  ", "ID'd as other "};
-				for (int i = 0; i < 2; ++i) {
-					double[] row = cmMatrix[i];
-					writer.print(lineheads[i] + Integer.toString((int) row[0]) + "             " + Integer.toString((int) row[1]));
-				}
+				writer.print(strMatrix);
 			}
 		}
 		catch (Exception e){

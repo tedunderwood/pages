@@ -3,7 +3,6 @@ package pages;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Arrays;
-import java.util.HashSet;
 
 /**
  * @author tunderwood
@@ -411,13 +410,13 @@ public class Volume {
 			// vector[vocabularySize + 24] = 0;
 			// vector[vocabularySize + 25] = 0;
 			
-			if (metadataFeatures.containsKey("##litprob")) {
+			if (metadataFeatures.containsKey("#litprob")) {
 				vector[vocabularySize + 26] = metadataFeatures.get("#litprob");
 			} else {
 				vector[vocabularySize + 26] = 0.0d;
 			}
 			
-			if (metadataFeatures.containsKey("##bioprob")) {
+			if (metadataFeatures.containsKey("#bioprob")) {
 				vector[vocabularySize + 27] = metadataFeatures.get("#bioprob");
 			} else {
 				vector[vocabularySize + 27] = 0.0d;

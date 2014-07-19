@@ -17,6 +17,7 @@ import java.util.ArrayList;
 public class GenrePredictor implements Serializable {
 	private static final long serialVersionUID = 121L;
 	public String genre;
+	public String predictionMetadata;
 	
 	public GenrePredictor() {
 		// purely for subclassing
@@ -33,6 +34,11 @@ public class GenrePredictor implements Serializable {
 	
 	public String reportStatus() {
 		return "Placeholder.";
+	}
+	
+	public void classify(String thisFile, String inputDir, String outputDir, MarkovTable markov, ArrayList<String> genres, 
+			Vocabulary vocabulary, FeatureNormalizer normalizer, boolean isPairtree) {
+		
 	}
 
 }

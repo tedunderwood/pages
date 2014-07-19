@@ -103,6 +103,10 @@ public class MapPages {
 			Global.undersample = true;
 		}
 		
+		if (parser.isPresent("-multiclass")) {
+			Global.multiclassForest = true;
+		}
+		
 		boolean trainingRun = parser.isPresent("-train");
 		// The most important option defines whether this is a training run.
 		
@@ -111,7 +115,7 @@ public class MapPages {
 		String featureDir;
 		String genreDir;
 		String additionalTrainingDir = null;
-		String vocabPath = "/Users/tunder/Dropbox/pagedata/enlargedvocabulary.txt";
+		String vocabPath = "/Users/tunder/Dropbox/pagedata/reducedvocabulary.txt";
 		
 		if (parser.isPresent("-output")) {
 			dirForOutput = parser.getString("-output");
@@ -281,8 +285,15 @@ public class MapPages {
 					genrePaths.addAll(moreGenrePaths);
 				}
 				
-				GenreList newGenreList = trainAndClassify(trainingSet, featurePaths, genrePaths, 
+				GenreList newGenreList;
+				if (Global.multiclassForest){
+					newGenreList = multiclassTrainAndClassify(trainingSet, featurePaths, genrePaths, 
+							dirToProcess, testSet, dirForOutput, serialize);
+				}
+				else {
+					newGenreList = trainAndClassify(trainingSet, featurePaths, genrePaths, 
 						dirToProcess, testSet, dirForOutput, serialize);
+				}
 				// The important outputs of trainAndClassify are obviously, the genre 
 				// predictions that get written to file inside the methof. But the method also 
 				// returns a GenreList, which allows us to check that all genres are 
@@ -396,6 +407,48 @@ public class MapPages {
 		return model.genreList;
 	}
 	
+	private static GenreList multiclassTrainAndClassify (ArrayList<String> trainingVols, ArrayList<String> featurePaths, ArrayList<String> genrePaths, 
+			String inputDir, ArrayList<String> volsToProcess, String dirForOutput, boolean serialize) {
+		
+		Model model = trainForest(trainingVols, featurePaths, genrePaths);
+		
+		MarkovTable markov = model.markov;
+		ArrayList<String> genres = model.genreList.genreLabels;
+		FeatureNormalizer normalizer = model.normalizer;
+		ArrayList<GenrePredictor> classifiers = model.classifiers;
+		GenrePredictor forest = classifiers.get(0);
+		
+		String outPath = dirForOutput + "/predictionMetadata.tsv";
+		LineWriter metadataWriter = new LineWriter(outPath, true);
+		String[] metadata = new String[volsToProcess.size()];
+		
+		int i = 0;
+		for (String thisFile : volsToProcess) {
+			// The final parameter == false because this will never be run in a pairtree context.
+			forest.classify(thisFile, inputDir, dirForOutput, markov, genres, vocabulary, normalizer, false);
+			metadata[i] = forest.predictionMetadata;
+			++ i;
+		}
+		
+		metadataWriter.send(metadata);
+		
+		if (serialize) {
+			 try {
+		         FileOutputStream fileOut =
+		         new FileOutputStream(dirForOutput + "/Model.ser");
+		         ObjectOutputStream out = new ObjectOutputStream(fileOut);
+		         out.writeObject(model);
+		         out.close();
+		         fileOut.close();
+		         System.out.printf("Serialized data is saved in " + dirForOutput + "/Model.ser\n");
+		      }
+			 catch(IOException except) {
+		          except.printStackTrace();
+		      }
+		}
+		return model.genreList;
+	}
+	
 	private static Model trainModel (ArrayList<String> trainingVols, ArrayList<String> featurePaths, ArrayList<String> genrePaths) {
 		
 		featureCount = vocabulary.vocabularySize;
@@ -441,6 +494,29 @@ public class MapPages {
 		for (int i = 0; i < numGenres; ++ i) {
 			classifiers.add(trainingThreads.get(i).classifier);
 		}
+			
+		MarkovTable markov = corpus.makeMarkovTable(trainingVols, MARKOVSMOOTHING);
+		
+		Model model = new Model(vocabulary, normalizer, corpus.genres, classifiers, markov);
+		return model;
+	}
+	
+	private static Model trainForest (ArrayList<String> trainingVols, ArrayList<String> featurePaths, ArrayList<String> genrePaths) {
+		
+		featureCount = vocabulary.vocabularySize;
+		System.out.println(featureCount + " features.");
+		Corpus corpus = new Corpus(featurePaths, genrePaths, trainingVols, vocabulary);
+		numGenres = corpus.genres.getSize();
+		System.out.println(numGenres);
+		numInstances = corpus.numPoints;
+		genres = corpus.genres.genreLabels;
+		FeatureNormalizer normalizer = corpus.normalizer;
+		ArrayList<String> features = normalizer.features;
+		
+		GenrePredictor multiclassifier = new GenrePredictorMulticlass(corpus.genres, features, corpus.datapoints, true);
+		
+		ArrayList<GenrePredictor> classifiers = new ArrayList<GenrePredictor>(1);
+		classifiers.add(multiclassifier);
 			
 		MarkovTable markov = corpus.makeMarkovTable(trainingVols, MARKOVSMOOTHING);
 		

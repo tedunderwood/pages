@@ -59,6 +59,7 @@ public class Global {
 		{"clo", "dra"}, {"impri", "front"}, {"libra", "back"} };
 	
 	public static boolean undersample = false;
+	public static boolean multiclassForest = false;
 	
 	public static void separateBiography() {
 		for (String[] aPair : CONVERSIONS) {
