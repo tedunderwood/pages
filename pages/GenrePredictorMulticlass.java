@@ -55,10 +55,9 @@ public class GenrePredictorMulticlass extends GenrePredictor implements
 			ArrayList<DataPoint> thesePages = thisVolume.datapoints;
 			ArrayList<double[]> rawProbs = new ArrayList<double[]>(numPoints);
 			double[][] probs = testNewInstances(thesePages);
-			for (int i = 0; i < numGenres; ++i) {
-				for (int j = 0; j < numPoints; ++j) {
-					rawProbs.get(j)[i] = probs[j][i];
-				}
+			for (int i = 0; i < numPoints; ++i) {
+				double[] defensiveCopy = probs[i].clone();
+				rawProbs.add(defensiveCopy);
 			}
 			
 			ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
