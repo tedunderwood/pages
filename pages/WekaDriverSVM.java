@@ -6,11 +6,10 @@ package pages;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import weka.classifiers.Classifier;
+import weka.classifiers.functions.SMO;
 import weka.classifiers.Evaluation;
 import weka.core.Attribute;
-import weka.core.FastVector;
-import weka.core.Instance;
+import weka.core.DenseInstance;
 import weka.core.Instances;
 
 /**
@@ -18,9 +17,9 @@ import weka.core.Instances;
  *
  */
 public class WekaDriverSVM implements Serializable {
-	Classifier svm;
+	SMO svm;
 	Instances trainingSet;
-	FastVector featureNames;
+	ArrayList<Attribute> featureNames;
 	int numFeatures;
 	int numInstances;
 	String ridgeParameter;
@@ -47,35 +46,35 @@ public class WekaDriverSVM implements Serializable {
 		
 		LineWriter writer = new LineWriter(outpath, true);
 		
-		featureNames = new FastVector(numFeatures + 1);
+		featureNames = new ArrayList<Attribute>(numFeatures + 1);
 		for (int i = 0; i < numFeatures; ++ i) {
 			Attribute a = new Attribute(features.get(i));
-			featureNames.addElement(a);
+			featureNames.add(a);
 		}
 		
 		// Now we add the class attribute.
-		FastVector classValues = new FastVector(2);
-		classValues.addElement("positive");
-		classValues.addElement("negative");
+		ArrayList<String> classValues = new ArrayList<String>(2);
+		classValues.add("positive");
+		classValues.add("negative");
 		Attribute classAttribute = new Attribute("ClassAttribute", classValues);
-		featureNames.addElement(classAttribute);
+		featureNames.add(classAttribute);
 		
 		trainingSet = new Instances(genreToIdentify, featureNames, numInstances);
 		trainingSet.setClassIndex(numFeatures);
-		ArrayList<Instance> simpleListOfInstances = new ArrayList<Instance>(numInstances);
+		ArrayList<DenseInstance> simpleListOfInstances = new ArrayList<DenseInstance>(numInstances);
 		
 		int poscount = 0;
 		for (DataPoint aPoint : datapoints) {
-			Instance instance = new Instance(numFeatures + 1);
+			DenseInstance instance = new DenseInstance(numFeatures + 1);
 			for (int i = 0; i < numFeatures; ++i) {
-				instance.setValue((Attribute)featureNames.elementAt(i), aPoint.vector[i]);
+				instance.setValue(featureNames.get(i), aPoint.vector[i]);
 			}
 			if (aPoint.genre.equals(genreToIdentify)) {
-				instance.setValue((Attribute)featureNames.elementAt(numFeatures), "positive");
+				instance.setValue(featureNames.get(numFeatures), "positive");
 				poscount += 1;
 			}
 			else {
-				instance.setValue((Attribute)featureNames.elementAt(numFeatures), "negative");
+				instance.setValue(featureNames.get(numFeatures), "negative");
 			}
 			trainingSet.add(instance);
 			simpleListOfInstances.add(instance);
@@ -88,7 +87,8 @@ public class WekaDriverSVM implements Serializable {
 		
 		try {
 			String[] options = {"-M", "-V", "3", "-N", "2", "-P", ".000001", "-C", "1.4", "-K", "weka.classifiers.functions.supportVector.PolyKernel -E 1.0"};
-			svm = Classifier.forName("weka.classifiers.functions.SMO", options);
+			svm = new SMO();
+			svm.setOptions(options);
 			svm.buildClassifier(trainingSet);
 			if (verbose) {
 				writer.print(svm.toString());
@@ -103,7 +103,7 @@ public class WekaDriverSVM implements Serializable {
 			}
 			
 			for (int i = 0; i < numInstances; ++i) {
-				Instance anInstance = simpleListOfInstances.get(i);
+				DenseInstance anInstance = simpleListOfInstances.get(i);
 				memberProbs[i] = svm.distributionForInstance(anInstance);
 			}
 			// Get the confusion matrix
@@ -138,26 +138,26 @@ public class WekaDriverSVM implements Serializable {
 		int testSize = pointsToTest.size();
 		double[][] testProbs = new double[testSize][2];
 		
-		ArrayList<Instance> testSet = new ArrayList<Instance>(testSize);
+		ArrayList<DenseInstance> testSet = new ArrayList<DenseInstance>(testSize);
 		
 		for (DataPoint aPoint : pointsToTest) {
-			Instance instance = new Instance(numFeatures + 1);
+			DenseInstance instance = new DenseInstance(numFeatures + 1);
 			instance.setDataset(trainingSet);
 			for (int i = 0; i < numFeatures; ++i) {
-				instance.setValue((Attribute)featureNames.elementAt(i), aPoint.vector[i]);
+				instance.setValue(featureNames.get(i), aPoint.vector[i]);
 			}
 			if (aPoint.genre.equals(genreToIdentify)) {
-				instance.setValue((Attribute)featureNames.elementAt(numFeatures), "positive");
+				instance.setValue(featureNames.get(numFeatures), "positive");
 			}
 			else {
-				instance.setValue((Attribute)featureNames.elementAt(numFeatures), "negative");
+				instance.setValue(featureNames.get(numFeatures), "negative");
 			}
 			testSet.add(instance);
 		}
 		
 		try{
 			for (int i = 0; i < testSize; ++i) {
-				Instance anInstance = testSet.get(i);
+				DenseInstance anInstance = testSet.get(i);
 				testProbs[i] = svm.distributionForInstance(anInstance);
 				System.out.println(i);
 			}

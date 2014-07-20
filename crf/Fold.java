@@ -3,8 +3,8 @@
  */
 package crf;
 
-import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
+import weka.classifiers.trees.*;
 import weka.core.Instances;
 import weka.core.Instance;
 
@@ -14,7 +14,7 @@ import weka.core.Instance;
  */
 public class Fold implements java.io.Serializable {
 		
-	Classifier forest;
+	RandomForest forest;
 	Instances trainingSet;
 	int numInstances;
 	double[][] memberProbs;
@@ -33,7 +33,8 @@ public class Fold implements java.io.Serializable {
 		
 		try {
 			String[] options = {"-I", "100", "-K", "5"};
-			forest = Classifier.forName("weka.classifiers.trees.RandomForest", options);
+			forest = new weka.classifiers.trees.RandomForest();
+			forest.setOptions(options);
 			forest.buildClassifier(trainingSet);
 			if (verbose) {
 				writer.print(forest.toString());

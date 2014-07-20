@@ -5,11 +5,10 @@ package pages;
 
 import java.util.ArrayList;
 
-import weka.classifiers.Classifier;
+import weka.classifiers.trees.RandomForest;
 import weka.classifiers.Evaluation;
 import weka.core.Attribute;
-import weka.core.FastVector;
-import weka.core.Instance;
+import weka.core.DenseInstance;
 import weka.core.Instances;
 
 /**
@@ -17,9 +16,9 @@ import weka.core.Instances;
  *
  */
 public class WekaDriverMulticlass implements java.io.Serializable {
-	Classifier forest;
+	RandomForest forest;
 	Instances trainingSet;
-	FastVector featureNames;
+	ArrayList<Attribute> featureNames;
 	int numFeatures;
 	int numInstances;
 	int numGenres;
@@ -37,38 +36,39 @@ public class WekaDriverMulticlass implements java.io.Serializable {
 		
 		LineWriter writer = new LineWriter(outpath, true);
 		
-		featureNames = new FastVector(numFeatures + 1);
+		featureNames = new ArrayList<Attribute>(numFeatures + 1);
 		for (int i = 0; i < numFeatures; ++ i) {
 			Attribute a = new Attribute(features.get(i));
-			featureNames.addElement(a);
+			featureNames.add(a);
 		}
 		
 		// Now we add the class attribute.
-		FastVector classValues = new FastVector(numGenres);
+		ArrayList<String> classValues = new ArrayList<String>(numGenres);
 		for (String genre : genres.genreLabels) {
-			classValues.addElement(genre);
+			classValues.add(genre);
 		}
 		Attribute classAttribute = new Attribute("ClassAttribute", classValues);
-		featureNames.addElement(classAttribute);
+		featureNames.add(classAttribute);
 		
 		trainingSet = new Instances("multiclassForest", featureNames, numInstances);
 		trainingSet.setClassIndex(numFeatures);
 		
 		for (DataPoint aPoint : datapoints) {
-			Instance instance = new Instance(numFeatures + 1);
+			DenseInstance instance = new DenseInstance(numFeatures + 1);
 			for (int i = 0; i < numFeatures; ++i) {
-				instance.setValue((Attribute)featureNames.elementAt(i), aPoint.vector[i]);
+				instance.setValue(featureNames.get(i), aPoint.vector[i]);
 			}
 	
-			instance.setValue((Attribute)featureNames.elementAt(numFeatures), aPoint.genre);
+			instance.setValue(featureNames.get(numFeatures), aPoint.genre);
 			trainingSet.add(instance);
 		}
 		
 		System.out.println("Forest: multiclass.");
 		
 		try {
-			String[] options = {"-I", "200", "-K", "25"};
-			forest = Classifier.forName("weka.classifiers.trees.RandomForest", options);
+			String[] options = {"-I", "200", "-K", "25", "-num-slots", "12"};
+			RandomForest forest = new RandomForest();
+			forest.setOptions(options);
 			forest.buildClassifier(trainingSet);
 			if (verbose) {
 				writer.print(forest.toString());
@@ -107,15 +107,15 @@ public class WekaDriverMulticlass implements java.io.Serializable {
 		int testSize = pointsToTest.size();
 		double[][] testProbs = new double[testSize][numGenres];
 		
-		ArrayList<Instance> testSet = new ArrayList<Instance>(testSize);
+		ArrayList<DenseInstance> testSet = new ArrayList<DenseInstance>(testSize);
 		
 		for (DataPoint aPoint : pointsToTest) {
-			Instance instance = new Instance(numFeatures + 1);
+			DenseInstance instance = new DenseInstance(numFeatures + 1);
 			instance.setDataset(trainingSet);
 			for (int i = 0; i < numFeatures; ++i) {
-				instance.setValue((Attribute)featureNames.elementAt(i), aPoint.vector[i]);
+				instance.setValue(featureNames.get(i), aPoint.vector[i]);
 			}
-			instance.setValue((Attribute)featureNames.elementAt(numFeatures), "poe");
+			instance.setValue(featureNames.get(numFeatures), "poe");
 			// It's not true that all new instances are poetry! But it doesn't really matter
 			// what nominal class we give these instances; we're classifying them.
 			testSet.add(instance);
@@ -123,7 +123,7 @@ public class WekaDriverMulticlass implements java.io.Serializable {
 		
 		try{
 			for (int i = 0; i < testSize; ++i) {
-				Instance anInstance = testSet.get(i);
+				DenseInstance anInstance = testSet.get(i);
 				testProbs[i] = forest.distributionForInstance(anInstance);
 			}
 		}
