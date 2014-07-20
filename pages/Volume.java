@@ -375,8 +375,7 @@ public class Volume {
 			// exclamation points normalized for wordcount
 			vector[vocabularySize + 15] = questionmarks / sumAllWords;
 			// question marks normalized for wordcount
-			vector[vocabularySize + 16] = 0;
-					// endwpunct / textlines;
+			vector[vocabularySize + 16] = endwpunct / textlines;
 			// Proportion of lines ending with punctuation.
 			vector[vocabularySize + 17] = endwnumeral / textlines;
 			// Proportion of lines ending with a digit as either of last two chars.
@@ -391,8 +390,7 @@ public class Volume {
 			vector[vocabularySize + 22] = 0;
 					// ((startwname +1) * (startwrubric+1)) / (wordnotinvocab + 1);
 			// Okay, now I'm just throwing stuff at the wall to see if it sticks.
-			vector[vocabularySize + 23] = 0;
-					// Math.abs(sumAllWords - meanWordsPerPage) / meanWordsPerPage;
+			vector[vocabularySize + 23] = Math.abs(sumAllWords - meanWordsPerPage) / meanWordsPerPage;
 			// absolute deviation, plus or minus, from mean num words, normalized by mean
 			
 			if (metadataFeatures.containsKey("#metaBiography")) {
@@ -410,13 +408,13 @@ public class Volume {
 			// vector[vocabularySize + 24] = 0;
 			// vector[vocabularySize + 25] = 0;
 			
-			if (metadataFeatures.containsKey("#litprob")) {
+			if (metadataFeatures.containsKey("##litprob")) {
 				vector[vocabularySize + 26] = metadataFeatures.get("#litprob");
 			} else {
 				vector[vocabularySize + 26] = 0.0d;
 			}
 			
-			if (metadataFeatures.containsKey("#bioprob")) {
+			if (metadataFeatures.containsKey("##bioprob")) {
 				vector[vocabularySize + 27] = metadataFeatures.get("#bioprob");
 			} else {
 				vector[vocabularySize + 27] = 0.0d;

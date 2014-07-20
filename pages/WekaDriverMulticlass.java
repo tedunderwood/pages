@@ -67,7 +67,7 @@ public class WekaDriverMulticlass implements java.io.Serializable {
 		System.out.println("Forest: multiclass.");
 		
 		try {
-			String[] options = {"-I", "100", "-K", "22"};
+			String[] options = {"-I", "200", "-K", "25"};
 			forest = Classifier.forName("weka.classifiers.trees.RandomForest", options);
 			forest.buildClassifier(trainingSet);
 			if (verbose) {
