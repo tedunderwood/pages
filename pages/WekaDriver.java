@@ -4,7 +4,6 @@
 package pages;
 import java.util.ArrayList;
 // import java.io.File;
-import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.functions.Logistic;
 import weka.core.Attribute;
@@ -17,7 +16,7 @@ import weka.core.DenseInstance;
  */
 public class WekaDriver implements java.io.Serializable {
 	
-	Classifier logistic;
+	Logistic logistic;
 	Instances trainingSet;
 	ArrayList<Attribute> featureNames;
 	int numFeatures;
@@ -90,7 +89,7 @@ public class WekaDriver implements java.io.Serializable {
 		
 		try {
 			String[] options = {"-R", ridgeParameter};
-			Logistic logistic = new Logistic();
+			logistic = new Logistic();
 			logistic.setOptions(options);
 			logistic.buildClassifier(trainingSet);
 			if (verbose) {

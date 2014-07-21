@@ -115,7 +115,7 @@ public class MapPages {
 		String featureDir;
 		String genreDir;
 		String additionalTrainingDir = null;
-		String vocabPath = "/Users/tunder/Dropbox/pagedata/enlargedvocabulary.txt";
+		String vocabPath = "/Users/tunder/Dropbox/pagedata/thousandvocabulary.txt";
 		
 		if (parser.isPresent("-output")) {
 			dirForOutput = parser.getString("-output");
