@@ -212,6 +212,8 @@ public class Volume {
 			
 			// Then sum all occurrences of words to the appropriate vector index.
 			double textlines = 0.0001d;
+			double lines = 0.0001d;
+			double stdev = 0.0001d;
 			double caplines = 0.0001d;
 			double maxinitial = 0;
 			double maxpair = 0;
@@ -257,11 +259,16 @@ public class Volume {
 					}
 				}
 				
-				if (word.equals("#textlines") | word.equals("#lines")) {
+				if (word.equals("#textlines")) {
 					textlines = Double.parseDouble(feature[2]);
 					continue;
 					// Really an integer but cast as double to avoid 
 					// integer division. Same below.
+				}
+				
+				if (word.equals("#lines")) {
+					lines = Double.parseDouble(feature[2]);
+					continue;
 				}
 				
 				if (word.equals("#caplines")) {
@@ -322,6 +329,9 @@ public class Volume {
 				}
 			}
 			
+			if (textlines < 0.1) textlines = 0.001d;
+			// hack to avoid div by zero in cases where #textlines == 0.
+			
 			// Normalize the feature counts for total words on page:
 			
 			for (int j = 0; j < vocabularySize; ++ j) {
@@ -334,9 +344,6 @@ public class Volume {
 			
 			double positionInVol = (double) thisPageNum / maxPageNum;
 			// TODO: Error handling to avoid division by zero here.
-			
-			if (textlines == 0) textlines = 0.1;
-			// hack to avoid division by zero
 					
 			double lengthRatio = textlines / meanLinesPerPage;
 			double capRatio = caplines / textlines;
@@ -365,12 +372,12 @@ public class Volume {
 			// type-token ratio
 			vector[vocabularySize + 11] = commas / sumAllWords;
 			// commas normalized for wordcount
-			vector[vocabularySize + 12] = 0;
-					// periods / sumAllWords;
+			vector[vocabularySize + 12] = textlines / lines;
+			// The number of lines with text divided by the total number of lines.
 			// periods normalized for wordcount
 			vector[vocabularySize + 13] = 0;
-					// quotations / sumAllWords;
-			// quotation marks normalized for wordcount
+			// stdev;
+			// Standard deviation of line lengths on the page, excluding blank lines.
 			vector[vocabularySize + 14] = exclamationpoints / sumAllWords;
 			// exclamation points normalized for wordcount
 			vector[vocabularySize + 15] = questionmarks / sumAllWords;
@@ -387,8 +394,8 @@ public class Volume {
 			// Largest number of capitalized initials in alphabetical sequence.
 			vector[vocabularySize + 21] = sequentialcaps / (caplines + 0.0001);
 			// Sequential caps normalized for the number of capitalized lines.
-			vector[vocabularySize + 22] = 0;
-					// ((startwname +1) * (startwrubric+1)) / (wordnotinvocab + 1);
+			vector[vocabularySize + 22] = stdev / (sumAllWords / textlines);
+			// normalized stdev
 			// Okay, now I'm just throwing stuff at the wall to see if it sticks.
 			vector[vocabularySize + 23] = Math.abs(sumAllWords - meanWordsPerPage) / meanWordsPerPage;
 			// absolute deviation, plus or minus, from mean num words, normalized by mean
