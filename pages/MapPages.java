@@ -103,8 +103,12 @@ public class MapPages {
 			Global.undersample = true;
 		}
 		
-		if (parser.isPresent("-multiclass")) {
+		if (parser.isPresent("-multiclassforest")) {
 			Global.multiclassForest = true;
+		}
+		
+		if (parser.isPresent("-multipleforests")) {
+			Global.multipleForests = true;
 		}
 		
 		boolean trainingRun = parser.isPresent("-train");
@@ -115,7 +119,7 @@ public class MapPages {
 		String featureDir;
 		String genreDir;
 		String additionalTrainingDir = null;
-		String vocabPath = "/Users/tunder/Dropbox/pagedata/thousandvocabulary.txt";
+		String vocabPath = "/Users/tunder/Dropbox/pagedata/enlargedvocabulary.txt";
 		
 		if (parser.isPresent("-output")) {
 			dirForOutput = parser.getString("-output");

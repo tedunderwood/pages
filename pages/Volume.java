@@ -394,7 +394,8 @@ public class Volume {
 			// Largest number of capitalized initials in alphabetical sequence.
 			vector[vocabularySize + 21] = sequentialcaps / (caplines + 0.0001);
 			// Sequential caps normalized for the number of capitalized lines.
-			vector[vocabularySize + 22] = stdev / (sumAllWords / textlines);
+			vector[vocabularySize + 22] = 0;
+			// stdev / (sumAllWords / textlines);
 			// normalized stdev
 			// Okay, now I'm just throwing stuff at the wall to see if it sticks.
 			vector[vocabularySize + 23] = Math.abs(sumAllWords - meanWordsPerPage) / meanWordsPerPage;
