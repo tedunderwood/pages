@@ -84,7 +84,7 @@ public class WekaDriverForest implements java.io.Serializable {
 		System.out.println("Forest: " + genreToIdentify + " count: " + poscount);
 		
 		try {
-			String[] options = {"-I", "110", "-K", "22"};
+			String[] options = {"-I", "500", "-K", "22", "-num-slots", "2"};
 			forest = new RandomForest();
 			forest.setOptions(options);
 			forest.buildClassifier(trainingSet);

@@ -44,6 +44,8 @@ public class MapPages {
 	static final String[][] EQUIVALENT = { { "bio", "non", "adver", "aut"}, {"bookp", "front"}, {"libra", "back", "index"}};
 	static final double MARKOVSMOOTHING = .0001d;
 	static Vocabulary vocabulary;
+	static ArgumentParser parser;
+	static String logfile;
 
 	/**
 	 * Main method: mostly argument-parsing.
@@ -79,37 +81,8 @@ public class MapPages {
 		// to find whether certain options are present, and what values are assigned
 		// to them.
 		
-		String logfile = "/Users/tunder/output/warninglog.txt";
-		ArgumentParser parser = new ArgumentParser(args);
-		if (parser.isPresent("-log")) {
-			logfile = parser.getString("-log");
-		}
-		
-		WarningLogger.initializeLogger(true, logfile);
-		
-		if (parser.isPresent("-index")) {
-			Global.separateIndex();
-		}
-		
-		if (parser.isPresent("-allvsall")) {
-			Global.allVsAll = true;
-		}
-		
-		if (parser.isPresent("-bio")) {
-			Global.separateBiography();
-		}
-		
-		if (parser.isPresent("-undersample")) {
-			Global.undersample = true;
-		}
-		
-		if (parser.isPresent("-multiclassforest")) {
-			Global.multiclassForest = true;
-		}
-		
-		if (parser.isPresent("-multipleforests")) {
-			Global.multipleForests = true;
-		}
+		logfile = "/Users/tunder/output/warninglog.txt";
+		parseGlobalOptions(args);
 		
 		boolean trainingRun = parser.isPresent("-train");
 		// The most important option defines whether this is a training run.
@@ -206,6 +179,34 @@ public class MapPages {
 			}
 		}
 		
+	}
+	
+	private static void parseGlobalOptions (String[] args) {
+		parser = new ArgumentParser(args);
+		if (parser.isPresent("-log")) {
+			logfile = parser.getString("-log");
+		}
+		
+		WarningLogger.initializeLogger(true, logfile);
+		
+		if (parser.isPresent("-index")) {
+			Global.separateIndex();
+		}
+		if (parser.isPresent("-allvsall")) {
+			Global.allVsAll = true;
+		}
+		if (parser.isPresent("-bio")) {
+			Global.separateBiography();
+		}
+		if (parser.isPresent("-undersample")) {
+			Global.undersample = true;
+		}
+		if (parser.isPresent("-multiclassforest")) {
+			Global.multiclassForest = true;
+		}
+		if (parser.isPresent("-multipleforests")) {
+			Global.multipleForests = true;
+		}
 	}
 	
 	private static void trainingRun (String vocabPath, String featureDir, String genreDir, 
