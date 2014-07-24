@@ -156,8 +156,9 @@ public class MapPages {
 				ArrayList<String> volsToProcess = DirectoryList.getStrippedPGTSVs(dirToProcess);
 				System.out.println("We have " + Integer.toString(volsToProcess.size()) + " volumes to process.");
 				String modelPath = parser.getString("-model");
+				String modelName = parser.getString("-modelname");
 				Model model = deserializeModel(modelPath);
-				applyModel(model, dirToProcess, volsToProcess, dirForOutput, false);
+				applyModel(model, dirToProcess, volsToProcess, dirForOutput, false, modelName);
 				// The final argument == false because this is not a pairtree process.
 			}
 			else {
@@ -172,9 +173,10 @@ public class MapPages {
 				// If this is being run on a pairtree, it's probably quite a large workset.
 				
 				String modelPath = parser.getString("-model");
+				String modelName = parser.getString("-modelname");
 				Model model = deserializeModel(modelPath);
 				
-				applyModel(model, dirToProcess, dirtyHtids, dirForOutput, true);
+				applyModel(model, dirToProcess, dirtyHtids, dirForOutput, true, modelName);
 				// The final argument == true because this is a pairtree process.
 			}
 		}
@@ -206,6 +208,9 @@ public class MapPages {
 		}
 		if (parser.isPresent("-multipleforests")) {
 			Global.multipleForests = true;
+		}
+		if (parser.isPresent("-outputjson")) {
+			Global.outputJSON = true;
 		}
 	}
 	
@@ -362,7 +367,7 @@ public class MapPages {
 		
 		for (String thisFile : volsToProcess) {
 			ClassifyingThread fileClassifier = new ClassifyingThread(thisFile, inputDir, dirForOutput, numGenres, 
-					classifiers, markov, genres, vocabulary, normalizer, false);
+					classifiers, markov, genres, vocabulary, normalizer, false, "model");
 			// The final parameter == false because this will never be run in a pairtree context.
 			fileClassifier.run();
 			filesToClassify.add(fileClassifier);
@@ -565,7 +570,7 @@ public class MapPages {
 	 * underlying data source being used.
 	 */
 	private static void applyModel (Model model, String inputDir, ArrayList<String> volsToProcess, 
-			String dirForOutput, boolean isPairtree) {
+			String dirForOutput, boolean isPairtree, String modelName) {
 		
 		vocabulary = model.vocabulary;
 		MarkovTable markov = model.markov;
@@ -583,7 +588,7 @@ public class MapPages {
 			thisFile = PairtreeReader.cleanID(thisFile);
 			// because they may have been passed in as dirty HathiTrust IDs with slashes and colons
 			ClassifyingThread fileClassifier = new ClassifyingThread(thisFile, inputDir, dirForOutput, numGenres, 
-					classifiers, markov, genres, vocabulary, normalizer, isPairtree);
+					classifiers, markov, genres, vocabulary, normalizer, isPairtree, modelName);
 			filesToClassify.add(fileClassifier);
 		}
 		

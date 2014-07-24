@@ -2,6 +2,7 @@ package pages;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import json.*;
 
 public class ClassifyingThread implements Runnable {
 	
@@ -16,10 +17,11 @@ public class ClassifyingThread implements Runnable {
 	private FeatureNormalizer normalizer;
 	private boolean isPairtree;
 	public String predictionMetadata;
+	private String modelLabel;
 	
 	public ClassifyingThread(String thisFile, String inputDir, String outputDir, int numGenres, 
 			ArrayList<GenrePredictor> classifiers, MarkovTable markov, ArrayList<String> genres, 
-			Vocabulary vocabulary, FeatureNormalizer normalizer, boolean isPairtree) {
+			Vocabulary vocabulary, FeatureNormalizer normalizer, boolean isPairtree, String modelLabel) {
 		this.thisFile = thisFile;
 		this.inputDir = inputDir;
 		this.outputDir = outputDir;
@@ -30,6 +32,7 @@ public class ClassifyingThread implements Runnable {
 		this.vocabulary = vocabulary;
 		this.normalizer = normalizer;
 		this.isPairtree = isPairtree;
+		this.modelLabel = modelLabel;
 	}
 
 	@Override
@@ -54,39 +57,41 @@ public class ClassifyingThread implements Runnable {
 		int numPoints = thisVolume.numPoints;
 		
 		if (numPoints > 0) {
-			try {
 				
+			ArrayList<DataPoint> thesePages = thisVolume.datapoints;
+			ArrayList<double[]> rawProbs = new ArrayList<double[]>(numPoints);
+			for (int i = 0; i < numPoints; ++i) {
+				double[] probs = new double[numGenres];
+				Arrays.fill(probs, 0);
+				rawProbs.add(probs);
+			}
 			
-				ArrayList<DataPoint> thesePages = thisVolume.datapoints;
-				ArrayList<double[]> rawProbs = new ArrayList<double[]>(numPoints);
-				for (int i = 0; i < numPoints; ++i) {
-					double[] probs = new double[numGenres];
-					Arrays.fill(probs, 0);
-					rawProbs.add(probs);
+			for (int i = 2; i < numGenres; ++i) {
+				GenrePredictor classify = classifiers.get(i);
+				// System.out.println(classify.reportStatus());
+				double[][] probs = classify.testNewInstances(thesePages);
+				for (int j = 0; j < numPoints; ++j) {
+					rawProbs.get(j)[i] = probs[j][0];
 				}
-				
-				for (int i = 2; i < numGenres; ++i) {
-					GenrePredictor classify = classifiers.get(i);
-					// System.out.println(classify.reportStatus());
-					double[][] probs = classify.testNewInstances(thesePages);
-					for (int j = 0; j < numPoints; ++j) {
-						rawProbs.get(j)[i] = probs[j][0];
-					}
-				}
-				
-				ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
-				// smoothedProbs = ForwardBackward.smooth(smoothedProbs, markov);
-				// This is really silly, but in practice it works: run the Markov smoothing twice!
-		
-				ClassificationResult rawResult = new ClassificationResult(rawProbs, numGenres, genres);
-				ClassificationResult smoothedResult = new ClassificationResult(smoothedProbs, numGenres, genres);
-				
+			}
+			
+			ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
+			// smoothedProbs = ForwardBackward.smooth(smoothedProbs, markov);
+			// This is really silly, but in practice it works: run the Markov smoothing twice!
+	
+			ClassificationResult rawResult = new ClassificationResult(rawProbs, numGenres, genres);
+			ClassificationResult smoothedResult = new ClassificationResult(smoothedProbs, numGenres, genres);
+			
+			String outFile = thisFile + ".predict";
+			String outPath = outputDir + "/" + outFile;
+			
+			if (Global.outputJSON) {
+				writeJSON(outPath, thisVolume, rawResult, smoothedResult, rawProbs, smoothedProbs);
+			}
+			else {
 				ArrayList<String> rawPredictions = rawResult.predictions;
 				ArrayList<String> predictions = smoothedResult.predictions;
-				
-				String outFile = thisFile + ".predict";
-				String outPath = outputDir + "/" + outFile;
-				
+			
 				LineWriter writer = new LineWriter(outPath, false);
 		
 				String[] outlines = new String[numPoints];
@@ -98,13 +103,10 @@ public class ClassifyingThread implements Runnable {
 					}
 				}
 				writer.send(outlines);
-				
-				this.predictionMetadata = thisFile + "\t" + Double.toString(smoothedResult.averageMaxProb) + "\t" +
-						Double.toString(smoothedResult.averageGap);
 			}
-			catch (Throwable t) {
-				System.out.println(t);
-			}
+			
+			this.predictionMetadata = thisFile + "\t" + Double.toString(smoothedResult.averageMaxProb) + "\t" +
+					Double.toString(smoothedResult.averageGap);
 		}
 		else {
 			this.predictionMetadata = thisFile + "\tNA\tNA";
@@ -112,5 +114,36 @@ public class ClassifyingThread implements Runnable {
 		}
 	}
 	
+	private void writeJSON(String outPath, Corpus thisVolume, ClassificationResult rawResult, ClassificationResult smoothedResult, 
+			ArrayList<double[]> smoothedProbs, ArrayList<double[]> rawProbs) {
+		
+		int numPoints = thisVolume.numPoints;
+		ArrayList<String> rawPredictions = rawResult.predictions;
+		ArrayList<String> predictions = smoothedResult.predictions;
+		
+		ArrayList<JSONObject> predictionList = new ArrayList<JSONObject>(numPoints);
+		for (int i = 0; i < numPoints; ++i) {
+			JSONObject pageObject = new JSONObject();
+			pageObject.put("raw", rawPredictions.get(i));
+			pageObject.put("smoothed", predictions.get(i));
+			double[] thisPageProbs = smoothedProbs.get(i);
+			for (int j = 0; j < genres.size(); ++j) {
+				String genre = genres.get(j);
+				pageObject.put(genre, thisPageProbs[j]);
+			}
+			predictionList.add(pageObject);
+		}
+		
+		JSONObject topObject = new JSONObject();
+		topObject.put("VolID", thisVolume.getFirstVolID());
+		topObject.put("model", modelLabel);
+		JSONArray predictionArray = new JSONArray(predictionList);
+		topObject.put("predictions", predictionArray);
+		
+		LineWriter writer = new LineWriter(outPath, true);
+		// The boolean flag here sets the writer to append mode.
+		writer.print(topObject.toString());
+		
+	}
 }
 

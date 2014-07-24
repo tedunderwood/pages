@@ -367,5 +367,14 @@ public class Corpus {
 	public int getNumGenres() {
 		return genres.getSize();
 	}
+	
+	/**
+	 * This is relevant mainly to one-volume corpora; it returns
+	 * the volume ID for the first volume in the list.
+	 */
+	public String getFirstVolID() {
+		Volume firstVolume = volumes.get(0);
+		return firstVolume.volumeID;
+	}
 
 }

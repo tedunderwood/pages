@@ -59,5 +59,23 @@ public class DataPoint {
 			vector[i] = vector[i] / magnitude;
 		}
 	}
+	
+	public int getPageNum() {
+		int len = label.length();
+		String page = "";
+		for (int i = len-1; i > -1; --i) {
+			String character = Character.toString(label.charAt(i));
+			if (character.equals(",")) break;
+			else page = character + page;	
+		}
+		int pagenum = -1;
+		try {
+			pagenum = Integer.parseInt(page);
+		}
+		catch (Exception e) {
+			System.out.println("Failure to parse page number.");
+		}
+		return pagenum;
+	}
 
 }
