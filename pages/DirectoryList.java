@@ -3,6 +3,28 @@ import java.io.File;
 import java.util.ArrayList;
 
 public class DirectoryList {
+	
+	public static ArrayList<String> getMatches(String path, String suffix) {
+		 
+	  String files;
+	  File folder = new File(path);
+	  File[] listOfFiles = folder.listFiles(); 
+	  ArrayList<String> matchingFiles = new ArrayList<String>();
+	 
+	  for (int i = 0; i < listOfFiles.length; i++) {
+	 
+	   if (listOfFiles[i].isFile()) 
+	   {
+	   files = listOfFiles[i].getName();
+	       if (files.endsWith(suffix))
+	       {
+	          matchingFiles.add(files);
+	        }
+	     }
+	  }
+	  return matchingFiles;	 
+	}
+
 	 
 	 public static ArrayList<String> getCSVs(String path) {
 	 

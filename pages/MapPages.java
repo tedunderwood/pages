@@ -700,6 +700,52 @@ public class MapPages {
 		}
 		return hathiIDs;
 	}
+	
+	private static void applyEnsemble(String ensembleFolder, String inputDir, ArrayList<String> volsToProcess, 
+			String dirForOutput, boolean isPairtree) {
+		ArrayList<String> ensembleInstructions  = new ArrayList<String>();
+		String ensembleInstructionPath = ensembleFolder + "instructions.tsv";
+		LineReader reader = new LineReader(ensembleInstructionPath);
+
+		try {
+			ensembleInstructions = reader.readList();
+		}
+		catch (InputFileException e) {
+			System.out.println("Missing ensemble file: " + ensembleInstructionPath);
+			System.exit(0);
+		}
+		
+		ArrayList<String> modelPaths = DirectoryList.getMatches(ensembleFolder, ".ser");
+		ArrayList<String> modelNames = new ArrayList<String>();
+		ArrayList<String[]> modelInstructions = new ArrayList<String[]>();
+		for (int i = 0; i < modelPaths.size(); ++i) {
+			String thisPath = modelPaths.get(i);
+			boolean matched = false;
+			for (int j = 0; j < ensembleInstructions.size(); ++ j) {
+				String[] fields = ensembleInstructions.get(j).split("\t");
+				if (fields[0].equals(thisPath)) {
+					modelNames.add(fields[1]);
+					modelInstructions.add(fields[2].split(" "));
+					matched = true;
+				}
+			}
+			if (!matched) System.out.println("No match found for a model in instruction file.");
+		}
+		
+		int ensembleSize = modelNames.size();
+		ArrayList<Model> ensemble = new ArrayList<Model>(ensembleSize);
+		for (String aPath : modelPaths) {
+			ensemble.add(deserializeModel(aPath));
+		}
+		for (String thisFile : volsToProcess) {
+			thisFile = PairtreeReader.cleanID(thisFile);
+			EnsembleThread runEnsemble = new EnsembleThread(thisFile, inputDir, dirForOutput, numGenres, 
+					classifiers, markov, genres, vocabulary, normalizer, isPairtree, modelName);
+		}
+		
+		
+		
+	}
 
 	private static ArrayList<String> getSlice(String slicePath) {
 		ArrayList<String> dirtyHtids;
