@@ -28,6 +28,8 @@ public class Model implements Serializable {
 		this.genreList = genreList;
 		this.classifiers = classifiers;
 		this.markov = markov;
+		genreList.makeIndex();
+		// That may be used if we use this model as part of an ensemble.
 	}
 
 }

@@ -22,13 +22,14 @@ import java.util.ArrayList;
  */
 public class ClassificationResult {
 	
-	ArrayList<String> predictions;
+	public ArrayList<String> predictions;
 	public double averageMaxProb;
 	public double averageGap;
+	public ArrayList<double[]> probabilities;
 	
 	ClassificationResult(ArrayList<double[]> probabilitiesPerPageAndGenre, 
 			int numGenres, ArrayList<String> genres) {
-		
+		probabilities = probabilitiesPerPageAndGenre;
 		int numPages = probabilitiesPerPageAndGenre.size();
 		
 		predictions = new ArrayList<String>(numPages);
@@ -48,6 +49,36 @@ public class ClassificationResult {
 					gapBetweenTopAndNext = probabilityPageIsGenreJ - maxprob;
 					maxprob = probabilityPageIsGenreJ;
 					predictions.set(i, genres.get(j));
+				}
+			}
+			
+			sumOfMaxProbs += maxprob;
+			sumOfGaps += gapBetweenTopAndNext;
+		}
+		
+		this.averageMaxProb = sumOfMaxProbs / numPages;
+		this.averageGap = sumOfGaps / numPages;
+	}
+	
+	ClassificationResult(ArrayList<double[]> probabilities, ArrayList<String> predictions, int numGenres) {
+		this.probabilities = probabilities;
+		this.predictions = predictions;
+		calculateAverages(numGenres);	
+	}
+	
+	private void calculateAverages (int numGenres) {
+		int numPages = probabilities.size();
+		double sumOfMaxProbs = 0d;
+		double sumOfGaps = 0d;
+		
+		for (int i = 0; i < numPages; ++i) {
+			double maxprob = 0d;
+			double gapBetweenTopAndNext = 0d;
+			for (int j = 0; j < numGenres; ++j) {
+				double probabilityPageIsGenreJ = probabilities.get(i)[j];
+				if (probabilityPageIsGenreJ > maxprob) {
+					gapBetweenTopAndNext = probabilityPageIsGenreJ - maxprob;
+					maxprob = probabilityPageIsGenreJ;
 				}
 			}
 			

@@ -139,6 +139,8 @@ public class ClassifyingThread implements Runnable {
 		topObject.put("model", modelLabel);
 		JSONArray predictionArray = new JSONArray(predictionList);
 		topObject.put("predictions", predictionArray);
+		topObject.put("avgmaxprob", smoothedResult.averageMaxProb);
+		topObject.put("avggap", smoothedResult.averageGap);
 		
 		LineWriter writer = new LineWriter(outPath, true);
 		// The boolean flag here sets the writer to append mode.

@@ -1,10 +1,12 @@
 package pages;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class GenreList implements java.io.Serializable {
 	public ArrayList<String> genreLabels;
 	private static final long serialVersionUID = 114L;
+	public HashMap<String, Integer> genreIndex;
 	
 	public GenreList() {
 		genreLabels = new ArrayList<String>();
@@ -60,6 +62,14 @@ public class GenreList implements java.io.Serializable {
 		}
 		else {
 			return false;
+		}
+	}
+	
+	public void makeIndex() {
+		int numGenres = genreLabels.size();
+		genreIndex = new HashMap<String, Integer>(numGenres);
+		for (int i = 0; i < numGenres; ++ i) {
+			genreIndex.put(genreLabels.get(i), i);
 		}
 	}
 

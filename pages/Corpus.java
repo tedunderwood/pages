@@ -335,6 +335,77 @@ public class Corpus {
 		 
 		return thisVol;
 	}
+	
+	/**
+     * A constructor that we use to minimize i/o in cases where the same volume is
+     * going to be passed through multiple models. Instead of accepting a filepath,
+     * it accepts the already-read lines of the file.
+	 * 
+	 * @param filelines The raw text of the underlying volume feature file, as a
+	 * list of strings.
+	 * @param vocabulary The vocabulary used to select features.
+	 * @param normalizer Stores feature means and stdevs for normalization.
+	 */
+	public Corpus(ArrayList<String> filelines, String dirtyID, 
+			Vocabulary vocabulary, FeatureNormalizer normalizer) {
+		
+		this.vocabulary = vocabulary;
+		this.normalizer = normalizer;
+		featureMap = vocabulary.getMap();
+		
+		Volume thisVol = readAVolumeFromList(filelines, dirtyID, featureMap);
+		
+		if (thisVol.totalWords > 1) {
+
+			// We're producing page points.
+			datapoints = thisVol.makePagePoints(featureMap);
+			numPoints = datapoints.size();
+			
+			normalizer.normalizeFeatures(datapoints);
+			// Note 1) that this method actually mutates the datapoints sent as a parameter,
+			// and 2) that it depends on the existence of a previously constructed
+			// FeatureNormalizer.
+		}
+		else {
+			numPoints = 0;
+			// This will be caught at a higher level so we don't attempt to classify an empty volume.
+		}
+	}
+	
+	private Volume readAVolumeFromList(ArrayList<String> filelines, String dirtyID,
+			HashMap<String, Integer> featureMap) {
+		
+		String cleanID = PairtreeReader.cleanID(dirtyID);
+		Volume thisVol = new Volume(cleanID);
+		
+		for (String line : filelines) {
+			String[] tokens = line.split("\t");
+			int tokenCount = tokens.length;
+			if (tokenCount != 3) {
+				System.out.println("Token count not 3 at " + line);
+				continue;
+				// TODO: better error handling
+			}
+			// If the feature is either a) in the vocabulary or
+			// b) a structural features, which always begins with a hashtag,
+			// we pass it through unaltered.
+			if (featureMap.containsKey(tokens[1]) | tokens[1].startsWith("#")) {
+				thisVol.addFeature(tokens);
+			}
+			else {
+				tokens[1] = "wordNotInVocab";
+				// Words not in the vocabulary still need to be included, for instance,
+				// in the total count of words per page. Also the density of rare words
+				// is itself revealing. So we count these as a special feature,
+				// "wordNotInVocab." Paradoxically, this is itself a word in the
+				// vocabulary. :)
+				thisVol.addFeature(tokens);
+			}
+		}
+		// end iteration across lines
+		 
+		return thisVol;
+	}
 
 	private static String normalizeGenre(String genre) {
 		for (String[] row : Global.CONVERSIONS) {

@@ -111,6 +111,8 @@ public class MapPages {
 			RIDGE = parser.getString("-ridge");
 		}
 		
+		boolean local = parser.isPresent("-local");
+		
 		if (trainingRun) {
 			String trainingRootDir = parser.getString("-troot");
 			trainingRootDir = validateDirectory(trainingRootDir, "training root");
@@ -149,8 +151,29 @@ public class MapPages {
 			trainingRun (vocabPath, featureDir, genreDir, dirToProcess, dirForOutput, 
 					additionalTrainingDir, crossvalidate, serialize);
 		}
+		else if (parser.isPresent("-ensemble")) {
+			// This is an ensemble run.
+			String ensembleFolder = parser.getString("-ensemble");
+			ArrayList<String> volsToProcess;
+			boolean isPairtree;
+			if (local) {
+				isPairtree = false;
+				dirToProcess = parser.getString("-toprocess");
+				volsToProcess = DirectoryList.getStrippedPGTSVs(dirToProcess);
+				System.out.println("We have " + Integer.toString(volsToProcess.size()) + " volumes to process.");
+			}
+			else {
+				isPairtree = true;
+				String slicePath = parser.getString("-slice");
+				// The path to a list of dirty HTIDs specifying volume locations.
+				volsToProcess = getSlice(slicePath);
+				dirToProcess = parser.getString("-pairtreeroot");
+				minutesToWait = 500;
+				// If this is being run on a pairtree, it's probably quite a large workset.
+			}
+			applyEnsemble(ensembleFolder, dirToProcess, volsToProcess, dirForOutput, isPairtree);
+		}
 		else {
-			boolean local = parser.isPresent("-local");
 			if (local) {
 				dirToProcess = parser.getString("-toprocess");
 				ArrayList<String> volsToProcess = DirectoryList.getStrippedPGTSVs(dirToProcess);
@@ -717,7 +740,7 @@ public class MapPages {
 		
 		ArrayList<String> modelPaths = DirectoryList.getMatches(ensembleFolder, ".ser");
 		ArrayList<String> modelNames = new ArrayList<String>();
-		ArrayList<String[]> modelInstructions = new ArrayList<String[]>();
+		ArrayList<String> modelInstructions = new ArrayList<String>();
 		for (int i = 0; i < modelPaths.size(); ++i) {
 			String thisPath = modelPaths.get(i);
 			boolean matched = false;
@@ -725,7 +748,7 @@ public class MapPages {
 				String[] fields = ensembleInstructions.get(j).split("\t");
 				if (fields[0].equals(thisPath)) {
 					modelNames.add(fields[1]);
-					modelInstructions.add(fields[2].split(" "));
+					modelInstructions.add(fields[2]);
 					matched = true;
 				}
 			}
@@ -738,9 +761,9 @@ public class MapPages {
 			ensemble.add(deserializeModel(aPath));
 		}
 		for (String thisFile : volsToProcess) {
-			thisFile = PairtreeReader.cleanID(thisFile);
-			EnsembleThread runEnsemble = new EnsembleThread(thisFile, inputDir, dirForOutput, numGenres, 
-					classifiers, markov, genres, vocabulary, normalizer, isPairtree, modelName);
+			
+			EnsembleThread runEnsemble = new EnsembleThread(thisFile, inputDir, dirForOutput, ensemble, 
+				modelNames, modelInstructions, isPairtree);
 		}
 		
 		

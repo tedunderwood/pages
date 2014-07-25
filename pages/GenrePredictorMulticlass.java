@@ -94,4 +94,32 @@ public class GenrePredictorMulticlass extends GenrePredictor implements
 		}
 		
 	}
+	
+	/**
+	 * Method called by EnsembleThread, which can handle the smoothing, writing, etc. itself, and
+	 * only needs raw probabilities to work with.
+	 * 
+	 * @param thisVolume
+	 * @param numPoints
+	 * @return
+	 */
+	public ArrayList<double[]> getRawProbabilities(Corpus thisVolume, int numPoints) {
+		// We have a choice of two different corpus constructors, depending on whether we
+		// are running this classification on a local directory, or on the cluster using
+		// files located in a pairtree hierarchy. The reason for the difference is that
+		// we need different i/o routines inside Corpus. This really has nothing to do 
+		// with the "wrapper" business, which is purposeless code inherited from an
+		// older version.
+		
+		ArrayList<DataPoint> thesePages = thisVolume.datapoints;
+		ArrayList<double[]> rawProbs = new ArrayList<double[]>(numPoints);
+		double[][] probs = testNewInstances(thesePages);
+		for (int i = 0; i < numPoints; ++i) {
+			double[] defensiveCopy = probs[i].clone();
+			rawProbs.add(defensiveCopy);
+		}
+		
+		return rawProbs;
+		
+	}
 }
