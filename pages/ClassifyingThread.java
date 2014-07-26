@@ -2,7 +2,6 @@ package pages;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import json.*;
 
 public class ClassifyingThread implements Runnable {
 	
@@ -86,7 +85,8 @@ public class ClassifyingThread implements Runnable {
 			String outPath = outputDir + "/" + outFile;
 			
 			if (Global.outputJSON) {
-				writeJSON(outPath, thisVolume, rawResult, smoothedResult, rawProbs, smoothedProbs);
+				JSONResultWriter writer = new JSONResultWriter(outPath, modelLabel, genres);
+				writer.writeJSON(thisVolume, rawResult, smoothedResult);
 			}
 			else {
 				ArrayList<String> rawPredictions = rawResult.predictions;
@@ -114,38 +114,5 @@ public class ClassifyingThread implements Runnable {
 		}
 	}
 	
-	private void writeJSON(String outPath, Corpus thisVolume, ClassificationResult rawResult, ClassificationResult smoothedResult, 
-			ArrayList<double[]> smoothedProbs, ArrayList<double[]> rawProbs) {
-		
-		int numPoints = thisVolume.numPoints;
-		ArrayList<String> rawPredictions = rawResult.predictions;
-		ArrayList<String> predictions = smoothedResult.predictions;
-		
-		ArrayList<JSONObject> predictionList = new ArrayList<JSONObject>(numPoints);
-		for (int i = 0; i < numPoints; ++i) {
-			JSONObject pageObject = new JSONObject();
-			pageObject.put("raw", rawPredictions.get(i));
-			pageObject.put("smoothed", predictions.get(i));
-			double[] thisPageProbs = smoothedProbs.get(i);
-			for (int j = 0; j < genres.size(); ++j) {
-				String genre = genres.get(j);
-				pageObject.put(genre, thisPageProbs[j]);
-			}
-			predictionList.add(pageObject);
-		}
-		
-		JSONObject topObject = new JSONObject();
-		topObject.put("VolID", thisVolume.getFirstVolID());
-		topObject.put("model", modelLabel);
-		JSONArray predictionArray = new JSONArray(predictionList);
-		topObject.put("predictions", predictionArray);
-		topObject.put("avgmaxprob", smoothedResult.averageMaxProb);
-		topObject.put("avggap", smoothedResult.averageGap);
-		
-		LineWriter writer = new LineWriter(outPath, true);
-		// The boolean flag here sets the writer to append mode.
-		writer.print(topObject.toString());
-		
-	}
 }
 

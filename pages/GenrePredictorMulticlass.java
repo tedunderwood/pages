@@ -56,8 +56,7 @@ public class GenrePredictorMulticlass extends GenrePredictor implements
 			ArrayList<double[]> rawProbs = new ArrayList<double[]>(numPoints);
 			double[][] probs = testNewInstances(thesePages);
 			for (int i = 0; i < numPoints; ++i) {
-				double[] defensiveCopy = probs[i].clone();
-				rawProbs.add(defensiveCopy);
+				rawProbs.add(probs[i]);
 			}
 			
 			ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
@@ -67,23 +66,30 @@ public class GenrePredictorMulticlass extends GenrePredictor implements
 			ClassificationResult rawResult = new ClassificationResult(rawProbs, numGenres, genres);
 			ClassificationResult smoothedResult = new ClassificationResult(smoothedProbs, numGenres, genres);
 			
-			ArrayList<String> rawPredictions = rawResult.predictions;
-			ArrayList<String> predictions = smoothedResult.predictions;
-			
 			String outFile = thisFile + ".predict";
 			String outPath = outputDir + "/" + outFile;
 			
-			LineWriter writer = new LineWriter(outPath, false);
-	
-			String[] outlines = new String[numPoints];
-			for (int i = 0; i < numPoints; ++i) {
-				outlines[i] = thesePages.get(i).label + "\t" + rawPredictions.get(i) + "\t" + predictions.get(i);
-				for (int j = 0; j < genres.size(); ++j) {
-					double[] thisPageProbs = smoothedProbs.get(i);
-					outlines[i] = outlines[i] + "\t" + genres.get(j) + "::" + Double.toString(thisPageProbs[j]);
-				}
+			if (Global.outputJSON) {
+				JSONResultWriter writer = new JSONResultWriter(outPath, "multiclassforest", genres);
+				writer.writeJSON(thisVolume, rawResult, smoothedResult);
 			}
-			writer.send(outlines);
+			else {
+			
+				ArrayList<String> rawPredictions = rawResult.predictions;
+				ArrayList<String> predictions = smoothedResult.predictions;
+				
+				LineWriter writer = new LineWriter(outPath, false);
+		
+				String[] outlines = new String[numPoints];
+				for (int i = 0; i < numPoints; ++i) {
+					outlines[i] = thesePages.get(i).label + "\t" + rawPredictions.get(i) + "\t" + predictions.get(i);
+					for (int j = 0; j < genres.size(); ++j) {
+						double[] thisPageProbs = smoothedProbs.get(i);
+						outlines[i] = outlines[i] + "\t" + genres.get(j) + "::" + Double.toString(thisPageProbs[j]);
+					}
+				}
+				writer.send(outlines);
+			}
 			
 			this.predictionMetadata = thisFile + "\t" + Double.toString(smoothedResult.averageMaxProb) + "\t" +
 					Double.toString(smoothedResult.averageGap);
@@ -122,4 +128,5 @@ public class GenrePredictorMulticlass extends GenrePredictor implements
 		return rawProbs;
 		
 	}
+	
 }

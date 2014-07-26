@@ -104,7 +104,7 @@ public class MapPages {
 		String featureDir;
 		String genreDir;
 		String additionalTrainingDir = null;
-		String vocabPath = "/Users/tunder/Dropbox/pagedata/thousandvocabulary.txt";
+		String vocabPath = "/Users/tunder/Dropbox/pagedata/reducedvocabulary2.txt";
 		
 		if (parser.isPresent("-output")) {
 			dirForOutput = parser.getString("-output");
@@ -367,7 +367,10 @@ public class MapPages {
 				multiclassTrainAndClassify(volumeLabels, featurePaths, genrePaths, 
 						dirToProcess, filesToProcess, dirForOutput, serialize);
 			}
-			trainAndClassify(volumeLabels, featurePaths, genrePaths, dirToProcess, filesToProcess, dirForOutput, serialize);
+			else {
+				trainAndClassify(volumeLabels, featurePaths, genrePaths, dirToProcess, 
+						filesToProcess, dirForOutput, serialize);
+			}
 		}
 	
 		System.out.println("DONE.");

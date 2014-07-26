@@ -54,6 +54,9 @@ public class EnsembleThread {
 		ArrayList<ClassificationResult> allSmoothedResults = new ArrayList<ClassificationResult>(numModels);
 		String volLabel = "error";
 		
+		String outFile = thisFile + ".predict";
+		String outPath = outputDir + "/" + outFile;
+		
 		for (int m = 0; m < numModels; ++m) {
 			
 			Model model = theEnsemble.get(m);
@@ -107,16 +110,16 @@ public class EnsembleThread {
 			ClassificationResult rawResult = new ClassificationResult(rawProbs, numGenres, genres);
 			ClassificationResult smoothedResult = new ClassificationResult(smoothedProbs, numGenres, genres);
 			
-			String outFile = thisFile + ".predict";
-			String outPath = outputDir + "/" + outFile;
+			JSONResultWriter writer = new JSONResultWriter(outPath, name, genres);
+			writer.writeJSON(thisVolume, rawResult, smoothedResult);
 			
-			writeJSON(outPath, thisVolume, rawResult, smoothedResult, rawProbs, smoothedProbs, name);
 			allRawResults.add(rawResult);
 			allSmoothedResults.add(smoothedResult);
 		}
 		
 		ClassificationResult consensus = reconcilePredictions(allRawResults, allSmoothedResults);
-		writeConsensus(outputDir, volLabel, consensus);
+		JSONResultWriter writer = new JSONResultWriter(outPath, "ensemble", genres);
+		writer.writeConsensus(volLabel, consensus, numPoints);
 		
 	}
 	
@@ -171,69 +174,6 @@ public class EnsembleThread {
 		
 		ClassificationResult consensusResult = new ClassificationResult(averagePredictions, consensus, numGenres);
 		return consensusResult;
-	}
-	
-	private void writeJSON(String outPath, Corpus thisVolume, ClassificationResult rawResult, ClassificationResult smoothedResult,
-			ArrayList<double[]> smoothedProbs, ArrayList<double[]> rawProbs, String modelLabel) {
-		
-		ArrayList<String> rawPredictions = rawResult.predictions;
-		ArrayList<String> predictions = smoothedResult.predictions;
-		
-		ArrayList<JSONObject> predictionList = new ArrayList<JSONObject>(numPoints);
-		for (int i = 0; i < numPoints; ++i) {
-			JSONObject pageObject = new JSONObject();
-			pageObject.put("raw", rawPredictions.get(i));
-			pageObject.put("smoothed", predictions.get(i));
-			double[] thisPageProbs = smoothedProbs.get(i);
-			for (int j = 0; j < genres.size(); ++j) {
-				String genre = genres.get(j);
-				pageObject.put(genre, thisPageProbs[j]);
-			}
-			predictionList.add(pageObject);
-		}
-		
-		JSONObject topObject = new JSONObject();
-		topObject.put("VolID", thisVolume.getFirstVolID());
-		topObject.put("model", modelLabel);
-		JSONArray predictionArray = new JSONArray(predictionList);
-		topObject.put("predictions", predictionArray);
-		topObject.put("avgmaxprob", smoothedResult.averageMaxProb);
-		topObject.put("avggap", smoothedResult.averageGap);
-		
-		LineWriter writer = new LineWriter(outPath, true);
-		// The boolean flag here sets the writer to append mode.
-		writer.print(topObject.toString());
-		
-	}
-	
-	private void writeConsensus(String outPath, String volLabel, ClassificationResult consensusResult) {
-		
-		ArrayList<String> predictions = consensusResult.predictions;
-		ArrayList<double[]> probabilities = consensusResult.probabilities;
-		
-		ArrayList<JSONObject> predictionList = new ArrayList<JSONObject>(numPoints);
-		for (int i = 0; i < numPoints; ++i) {
-			JSONObject pageObject = new JSONObject();
-			pageObject.put("consensus", predictions.get(i));
-			double[] thisPageProbs = probabilities.get(i);
-			for (int j = 0; j < genres.size(); ++j) {
-				String genre = genres.get(j);
-				pageObject.put(genre, thisPageProbs[j]);
-			}
-			predictionList.add(pageObject);
-		}
-		
-		JSONObject topObject = new JSONObject();
-		topObject.put("VolID", volLabel);
-		topObject.put("model", "ensemble");
-		JSONArray predictionArray = new JSONArray(predictionList);
-		topObject.put("predictions", predictionArray);
-		topObject.put("avgmaxprob", consensusResult.averageMaxProb);
-		topObject.put("avggap", consensusResult.averageGap);
-		
-		LineWriter writer = new LineWriter(outPath, true);
-		// The boolean flag here sets the writer to append mode.
-		writer.print(topObject.toString());
 	}
 	
 	private double[] normalize(double[] input) {
