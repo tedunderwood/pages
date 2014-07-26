@@ -52,7 +52,19 @@ public class MapPages {
 	 * 
 	 * @param args 	Options set at the command line.
 	 * -train			Include if a model is to be trained; otherwise we expect
-	 * -model (path)	Path to a previously-trained model.
+	 * -model (path)	Path to a previously-trained model, or
+	 * -ensemble (dir)	Folder that contains ensembles as well as an instruction file,
+	 * 					"instructions.tsv." Model filenames should end with ".ser"
+	 * -multiclassforest	Trains a Random Forest using the ordinary, direct
+	 * 						multiclass capability of that algorithm.
+	 * -multipleforests		Trains a Random Forest model for each genre using a one-vs-
+	 * 						all method. May underperform the previous option.
+	 * -allvsall		Trains a logistic model using an all-vs-all methodology, instead
+	 * 					of the default one-vs-all strategy of rendering this algorithm
+	 * 					multiclass. (Default works better.)
+	 * -outputjson		Writes prediction files as jsons.
+	 * -bio				Separates biography, autobiography, and letters from other nonfiction.
+	 * -index			Separates indexes, glossaries, and bibliographies from other back matter.
 	 * -output (dir)	Directory for all output.
 	 * -troot (dir)		Directory for training data; needs to include subdirectories
 	 * 					/pagefeatures and /genremaps.
@@ -62,7 +74,7 @@ public class MapPages {
 	 * -cross (int)		Number of crossvalidation folds; e.g., five-fold. The int parameter
 	 * 					is optional. Default 5.
 	 * -addtraining (dir)	Specifies an additional directory to be used as training data in every
-	 * 						fold of crossvalidation, but not treated as grount truth for testing.
+	 * 						fold of crossvalidation, but not treated as ground truth for testing.
 	 * 						This is useful e.g. for co-training.		
 	 * -save			Model will be saved to output directory. If you're using -cross, this will only
 	 * 					save the *last* model.
@@ -92,7 +104,7 @@ public class MapPages {
 		String featureDir;
 		String genreDir;
 		String additionalTrainingDir = null;
-		String vocabPath = "/Users/tunder/Dropbox/pagedata/enlargedvocabulary.txt";
+		String vocabPath = "/Users/tunder/Dropbox/pagedata/thousandvocabulary.txt";
 		
 		if (parser.isPresent("-output")) {
 			dirForOutput = parser.getString("-output");
@@ -351,6 +363,10 @@ public class MapPages {
 				featurePaths.add(featureDir);
 				genrePaths.add(genreDir);
 			}
+			if (Global.multiclassForest){
+				multiclassTrainAndClassify(volumeLabels, featurePaths, genrePaths, 
+						dirToProcess, filesToProcess, dirForOutput, serialize);
+			}
 			trainAndClassify(volumeLabels, featurePaths, genrePaths, dirToProcess, filesToProcess, dirForOutput, serialize);
 		}
 	
@@ -431,7 +447,7 @@ public class MapPages {
 		         out.writeObject(model);
 		         out.close();
 		         fileOut.close();
-		         System.out.printf("Serialized data is saved in " + dirForOutput + "/Model.ser\n");
+		         System.out.printf("Serialized data is saved in " + dirForOutput + "Model.ser\n");
 		      }
 			 catch(IOException except) {
 		          except.printStackTrace();
@@ -468,12 +484,12 @@ public class MapPages {
 		if (serialize) {
 			 try {
 		         FileOutputStream fileOut =
-		         new FileOutputStream(dirForOutput + "/Model.ser");
+		         new FileOutputStream(dirForOutput + "/ForestModel.ser");
 		         ObjectOutputStream out = new ObjectOutputStream(fileOut);
 		         out.writeObject(model);
 		         out.close();
 		         fileOut.close();
-		         System.out.printf("Serialized data is saved in " + dirForOutput + "/Model.ser\n");
+		         System.out.printf("Serialized data is saved in " + dirForOutput + "/ForestModel.ser\n");
 		      }
 			 catch(IOException except) {
 		          except.printStackTrace();
@@ -765,8 +781,6 @@ public class MapPages {
 			EnsembleThread runEnsemble = new EnsembleThread(thisFile, inputDir, dirForOutput, ensemble, 
 				modelNames, modelInstructions, isPairtree);
 		}
-		
-		
 		
 	}
 
