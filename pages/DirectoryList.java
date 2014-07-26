@@ -4,7 +4,13 @@ import java.util.ArrayList;
 
 public class DirectoryList {
 	
-	public static ArrayList<String> getMatches(String path, String suffix) {
+	/**
+	 * Return paths for all files in directory <code>path</code> that end with suffix.
+	 * @param path
+	 * @param suffix
+	 * @return
+	 */
+	public static ArrayList<String> getMatchingPaths(String path, String suffix) {
 		 
 	  String files;
 	  File folder = new File(path);
@@ -18,7 +24,8 @@ public class DirectoryList {
 	   files = listOfFiles[i].getName();
 	       if (files.endsWith(suffix))
 	       {
-	          matchingFiles.add(files);
+	          matchingFiles.add(path + files);
+	          // Note that this methods returns a whole path and not just a filename.
 	        }
 	     }
 	  }

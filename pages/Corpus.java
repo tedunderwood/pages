@@ -354,6 +354,8 @@ public class Corpus {
 		featureMap = vocabulary.getMap();
 		
 		Volume thisVol = readAVolumeFromList(filelines, dirtyID, featureMap);
+		volumes = new ArrayList<Volume>(1);
+		volumes.add(thisVol);
 		
 		if (thisVol.totalWords > 1) {
 

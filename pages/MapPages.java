@@ -757,7 +757,7 @@ public class MapPages {
 			System.exit(0);
 		}
 		
-		ArrayList<String> modelPaths = DirectoryList.getMatches(ensembleFolder, ".ser");
+		ArrayList<String> modelPaths = DirectoryList.getMatchingPaths(ensembleFolder, ".ser");
 		ArrayList<String> modelNames = new ArrayList<String>();
 		ArrayList<String> modelInstructions = new ArrayList<String>();
 		for (int i = 0; i < modelPaths.size(); ++i) {

@@ -86,7 +86,7 @@ public class EnsembleThread {
 				rawProbs = forest.getRawProbabilities(thisVolume, numPoints);
 			}
 			else {
-				// We assume model type is -onevsall.
+				// We assume model type is -onevsalllogistic.
 				ArrayList<DataPoint> thesePages = thisVolume.datapoints;
 				rawProbs = new ArrayList<double[]>(numPoints);
 				for (int i = 0; i < numPoints; ++i) {
