@@ -784,7 +784,7 @@ public class MapPages {
 			EnsembleThread runEnsemble = new EnsembleThread(thisFile, inputDir, dirForOutput, ensemble, 
 				modelNames, modelInstructions, isPairtree);
 		}
-		
+		System.out.println("DONE.");
 	}
 
 	private static ArrayList<String> getSlice(String slicePath) {

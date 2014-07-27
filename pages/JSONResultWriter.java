@@ -91,11 +91,17 @@ public class JSONResultWriter {
 		for (String aGenre : smoothedPredictions) {
 			smoothedGenres.put(aGenre);
 		}
+		JSONArray dissent = new JSONArray();
+		for (Double dissentLevel : consensusResult.dissents) {
+			String formatted = fourPlaces.format(dissentLevel);
+			dissent.put(formatted);
+		}
 		
 		JSONObject topObject = new JSONObject();
 		topObject.put("volID", volID);
 		topObject.put("model", modelLabel);
 		topObject.put("probabilities", predictionArray);
+		topObject.put("dissentLevels", dissent);
 		topObject.put("smoothedPredictions", smoothedGenres);
 		topObject.put("avgMaxProb", consensusResult.averageMaxProb);
 		topObject.put("avgGap", consensusResult.averageGap);

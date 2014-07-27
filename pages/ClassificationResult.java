@@ -26,6 +26,7 @@ public class ClassificationResult {
 	public double averageMaxProb;
 	public double averageGap;
 	public ArrayList<double[]> probabilities;
+	public ArrayList<Double> dissents;
 	
 	ClassificationResult(ArrayList<double[]> probabilitiesPerPageAndGenre, 
 			int numGenres, ArrayList<String> genres) {
@@ -60,9 +61,18 @@ public class ClassificationResult {
 		this.averageGap = sumOfGaps / numPages;
 	}
 	
-	ClassificationResult(ArrayList<double[]> probabilities, ArrayList<String> predictions, int numGenres) {
+	/**
+	 * This constructor is used to create consensus results, in which case we already know the
+	 * predictions.
+	 * 
+	 * @param probabilities
+	 * @param predictions
+	 * @param numGenres
+	 */
+	ClassificationResult(ArrayList<double[]> probabilities, ArrayList<String> predictions, int numGenres, ArrayList<Double> dissents) {
 		this.probabilities = probabilities;
 		this.predictions = predictions;
+		this.dissents = dissents;
 		calculateAverages(numGenres);	
 	}
 	
