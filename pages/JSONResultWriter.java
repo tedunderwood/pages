@@ -38,6 +38,7 @@ public class JSONResultWriter {
 			double[] thisPageProbs = smoothedProbs.get(i);
 			for (int j = 0; j < genres.size(); ++j) {
 				String genre = genres.get(j);
+				if (genre.equals("begin") | genre.equals("end")) continue;
 			    String formattedString = fourPlaces.format(thisPageProbs[j]);
 				pageObject.put(genre, formattedString);
 			}
@@ -81,6 +82,7 @@ public class JSONResultWriter {
 			double[] thisPageProbs = smoothedProbs.get(i);
 			for (int j = 0; j < genres.size(); ++j) {
 				String genre = genres.get(j);
+				if (genre.equals("begin") | genre.equals("end")) continue;
 			    String formattedString = fourPlaces.format(thisPageProbs[j]);
 				pageObject.put(genre, formattedString);
 			}
