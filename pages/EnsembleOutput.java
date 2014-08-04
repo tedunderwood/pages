@@ -5,123 +5,69 @@ package pages;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Random;
+import java.util.HashMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Not currently implemented as a "thread," so the class name is misleading. But it could be,
- * and probably will be, so implemented.
  * @author tunder
  *
  */
-public class EnsembleThread {
+public class EnsembleOutput implements Runnable {
 	
-	private ArrayList<String> genres;
-	private int numPoints;
+	private String outputDir;
+	private BlockingQueue<Unknown> inQueue;
+	private int numVolumes;
 	private int numModels;
+	private ArrayList<String> modelNames;
+	private ArrayList<String> genreLabels;
 	private int numGenres;
 	private HashMap<String, Integer> genreIndex;
 	
-	public EnsembleThread(String thisFile, String inputDir, String outputDir, ArrayList<Model> theEnsemble, 
-			ArrayList<String> modelNames, ArrayList<String> modelInstructions, boolean isPairtree) {
-		
-		numModels = theEnsemble.size();
-		assert (numModels == modelNames.size());
-		assert (numModels == modelInstructions.size());
-		
-		ArrayList<String> filelines;
-		
-		if (isPairtree) {
-			PairtreeReader reader = new PairtreeReader(inputDir);
-			filelines = reader.getVolume(thisFile);
-		}
-		else {
-			String volumePath = inputDir + thisFile + ".pg.tsv";
-			LineReader fileSource = new LineReader(volumePath);
-			try {
-				filelines = fileSource.readList();
-			}
-			catch (InputFileException e) {
-				WarningLogger.addFileNotFound(thisFile);
-				return;
-			}
-		}
-		
-		ArrayList<ClassificationResult> allRawResults = new ArrayList<ClassificationResult>(numModels);
-		ArrayList<ClassificationResult> allSmoothedResults = new ArrayList<ClassificationResult>(numModels);
-		String volLabel = "error";
-		
-		String outFile = thisFile + ".predict";
-		String outPath = outputDir + "/" + outFile;
-		
-		for (int m = 0; m < numModels; ++m) {
-			
-			Model model = theEnsemble.get(m);
-			String name = modelNames.get(m);
-			String modelType = modelInstructions.get(m);
-			
-			Vocabulary vocabulary = model.vocabulary;
-			MarkovTable markov = model.markov;
-			this.genres = model.genreList.genreLabels;
-			FeatureNormalizer normalizer = model.normalizer;
-			ArrayList<GenrePredictor> classifiers = model.classifiers;
-			numGenres = genres.size();
-			this.genreIndex = model.genreList.genreIndex;
-			
-			Corpus thisVolume = new Corpus(filelines, thisFile, vocabulary, normalizer);
-			numPoints = thisVolume.numPoints;
-			volLabel = thisVolume.getFirstVolID();
-			
-			if (numPoints < 1) {
-				WarningLogger.logWarning(thisFile + " was found to have zero pages!");
-				return;
-			}
-			
-			ArrayList<double[]> rawProbs;
-			if (modelType.equals("-multiclassforest")) {
-				GenrePredictorMulticlass forest = (GenrePredictorMulticlass) classifiers.get(0);
-				rawProbs = forest.getRawProbabilities(thisVolume, numPoints);
-			}
-			else {
-				// We assume model type is -onevsalllogistic.
-				ArrayList<DataPoint> thesePages = thisVolume.datapoints;
-				rawProbs = new ArrayList<double[]>(numPoints);
-				for (int i = 0; i < numPoints; ++i) {
-					double[] probs = new double[numGenres];
-					Arrays.fill(probs, 0);
-					rawProbs.add(probs);
-				}
-				
-				for (int i = 2; i < numGenres; ++i) {
-					GenrePredictor classify = classifiers.get(i);
-					// System.out.println(classify.reportStatus());
-					double[][] probs = classify.testNewInstances(thesePages);
-					for (int j = 0; j < numPoints; ++j) {
-						rawProbs.get(j)[i] = probs[j][0];
-					}
-				}
-			}
-				
-			ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
+	public EnsembleOutput(String outputDir, BlockingQueue<Unknown> inQueue, int numVolumes, int numModels, 
+			ArrayList<String> modelNames, ArrayList<String> genreLabels, HashMap<String, Integer> genreIndex) {
+		this.outputDir = outputDir;
+		this.inQueue = inQueue;
+		this.numVolumes = numVolumes;
+		this.numModels = numModels;
+		this.modelNames = modelNames;
+		this.genreLabels = genreLabels;
+		numGenres = genreLabels.size();
+		this.genreIndex = genreIndex;
+	}
 	
-			ClassificationResult rawResult = new ClassificationResult(rawProbs, numGenres, genres);
-			ClassificationResult smoothedResult = new ClassificationResult(smoothedProbs, numGenres, genres);
+	@Override
+	public void run() {
+		
+		for (int i = 0; i < numVolumes; ++i) {
+			try {
+				Unknown volume = inQueue.poll(10, TimeUnit.MINUTES);
+				int queuelen = inQueue.size();
+				System.out.println("Iteration " + i + " with queue at " + queuelen);
+				int numPoints = volume.getNumPoints();
+				String thisFile = volume.getLabel();
+				String outFile = thisFile + ".predict";
+				String outPath = outputDir + "/" + outFile;
+				
+				for (int j = 0; j < numModels; ++j) {
+					String name = modelNames.get(j);
+					JSONResultWriter writer = new JSONResultWriter(outPath, name, genreLabels);
+					writer.writeJSON(numPoints, thisFile, volume.getRaw(j), volume.getSmooth(j));
+				}
 			
-			JSONResultWriter writer = new JSONResultWriter(outPath, name, genres);
-			writer.writeJSON(numPoints, volLabel, rawResult, smoothedResult);
-			
-			allRawResults.add(rawResult);
-			allSmoothedResults.add(smoothedResult);
+				ClassificationResult consensus = reconcilePredictions(volume.smoothResults, volume.rawResults, numPoints);
+				JSONResultWriter writer = new JSONResultWriter(outPath, "ensemble", genreLabels);
+				writer.writeConsensus(thisFile, consensus, numPoints);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
 		}
-		
-		ClassificationResult consensus = reconcilePredictions(allRawResults, allSmoothedResults);
-		JSONResultWriter writer = new JSONResultWriter(outPath, "ensemble", genres);
-		writer.writeConsensus(volLabel, consensus, numPoints);
-		
+		System.out.println("Terminated output loop.");
 	}
 	
 	private ClassificationResult reconcilePredictions(ArrayList<ClassificationResult> rawResults, 
-			ArrayList<ClassificationResult> smoothedResults) {
+			ArrayList<ClassificationResult> smoothedResults, int numPoints) {
 		
 		// One strategy for combining ensembles is to average their predicted probabilities
 		// for each genre. In practice, simple voting is often more reliable, and we
@@ -195,7 +141,7 @@ public class EnsembleThread {
 		for (int i = 0; i < numGenres; ++i) {
 			if (predictions[i] > max) {
 				max = predictions[i];
-				theGenre = genres.get(i);
+				theGenre = genreLabels.get(i);
 			}
 		}
 		return theGenre;
@@ -208,7 +154,7 @@ public class EnsembleThread {
 		for (int i = 0; i < numGenres; ++i) {
 			if (votes[i] > max) {
 				max = votes[i];
-				theGenre = genres.get(i);
+				theGenre = genreLabels.get(i);
 			}
 		}
 		return theGenre;
@@ -261,15 +207,15 @@ public class EnsembleThread {
 				secondmax = max;
 				max = votes[i];
 				contenders[1] = contenders[0];
-				contenders[0] = genres.get(i);
+				contenders[0] = genreLabels.get(i);
 			}
 			else if (votes[i] >= secondmax) {
 				secondmax = votes[i];
-				contenders[1] = genres.get(i);
+				contenders[1] = genreLabels.get(i);
 			}
 		}
 		
 		return contenders[new Random().nextInt(2)];
 	}
-	
+
 }

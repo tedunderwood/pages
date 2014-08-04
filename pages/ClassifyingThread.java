@@ -86,7 +86,7 @@ public class ClassifyingThread implements Runnable {
 			
 			if (Global.outputJSON) {
 				JSONResultWriter writer = new JSONResultWriter(outPath, modelLabel, genres);
-				writer.writeJSON(thisVolume, rawResult, smoothedResult);
+				writer.writeJSON(thisVolume.numPoints, thisVolume.getFirstVolID(), rawResult, smoothedResult);
 			}
 			else {
 				ArrayList<String> rawPredictions = rawResult.predictions;

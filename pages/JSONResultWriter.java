@@ -23,9 +23,8 @@ public class JSONResultWriter {
 		this.modelLabel = modelLabel;
 	}
 	
-	public void writeJSON(Corpus thisVolume, ClassificationResult rawResult, ClassificationResult smoothedResult) {
+	public void writeJSON(int numPoints, String volID, ClassificationResult rawResult, ClassificationResult smoothedResult) {
 		ArrayList<double[]> smoothedProbs = smoothedResult.probabilities;
-		int numPoints = thisVolume.numPoints;
 		ArrayList<String> rawPredictions = rawResult.predictions;
 		ArrayList<String> smoothedPredictions = smoothedResult.predictions;
 		DecimalFormat fourPlaces = new DecimalFormat("0.0###");
@@ -55,7 +54,7 @@ public class JSONResultWriter {
 		}
 		
 		JSONObject topObject = new JSONObject();
-		topObject.put("volID", thisVolume.getFirstVolID());
+		topObject.put("volID", volID);
 		topObject.put("model", modelLabel);
 		topObject.put("probabilities", predictionArray);
 		topObject.put("rawPredictions", rawGenres);

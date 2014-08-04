@@ -6,6 +6,9 @@ package pages;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +39,7 @@ public class MapPages {
 	static int NTHREADS = 10;
 	static int NFOLDS = 5;
 	static int minutesToWait = 30;
-	static String RIDGE = "2";
+	static String RIDGE = "3";
 	static int featureCount;
 	static int numGenres;
 	static int numInstances;
@@ -104,7 +107,7 @@ public class MapPages {
 		String featureDir;
 		String genreDir;
 		String additionalTrainingDir = null;
-		String vocabPath = "/Users/tunder/Dropbox/pagedata/reallybiggestvocabulary.txt";
+		String vocabPath = "/Users/tunder/Dropbox/pagedata/newmethodvocabulary.txt";
 		
 		if (parser.isPresent("-output")) {
 			dirForOutput = parser.getString("-output");
@@ -183,7 +186,7 @@ public class MapPages {
 				minutesToWait = 500;
 				// If this is being run on a pairtree, it's probably quite a large workset.
 			}
-			applyEnsemble(ensembleFolder, dirToProcess, volsToProcess, dirForOutput, isPairtree);
+			parallelizeEnsemble(ensembleFolder, dirToProcess, volsToProcess, dirForOutput, isPairtree);
 		}
 		else {
 			if (local) {
@@ -784,6 +787,77 @@ public class MapPages {
 			EnsembleThread runEnsemble = new EnsembleThread(thisFile, inputDir, dirForOutput, ensemble, 
 				modelNames, modelInstructions, isPairtree);
 		}
+		System.out.println("DONE.");
+	}
+	
+	private static void parallelizeEnsemble(String ensembleFolder, String inputDir, ArrayList<String> volsToProcess, 
+			String dirForOutput, boolean isPairtree) {
+		ArrayList<String> ensembleInstructions  = new ArrayList<String>();
+		String ensembleInstructionPath = ensembleFolder + "instructions.tsv";
+		LineReader reader = new LineReader(ensembleInstructionPath);
+
+		try {
+			ensembleInstructions = reader.readList();
+		}
+		catch (InputFileException e) {
+			System.out.println("Missing ensemble file: " + ensembleInstructionPath);
+			System.exit(0);
+		}
+		
+		ArrayList<String> modelPaths = DirectoryList.getMatchingPaths(ensembleFolder, ".ser");
+		ArrayList<String> modelNames = new ArrayList<String>();
+		ArrayList<String> modelInstructions = new ArrayList<String>();
+		for (int i = 0; i < modelPaths.size(); ++i) {
+			String thisPath = modelPaths.get(i);
+			boolean matched = false;
+			for (int j = 0; j < ensembleInstructions.size(); ++ j) {
+				String[] fields = ensembleInstructions.get(j).split("\t");
+				if (fields[0].equals(thisPath)) {
+					modelNames.add(fields[1]);
+					modelInstructions.add(fields[2]);
+					matched = true;
+				}
+			}
+			if (!matched) System.out.println("No match found for a model in instruction file.");
+		}
+		
+		int ensembleSize = modelNames.size();
+		int numVolumes = volsToProcess.size();
+		
+		ArrayList<Model> ensemble = new ArrayList<Model>(ensembleSize);
+		for (String aPath : modelPaths) {
+			ensemble.add(deserializeModel(aPath));
+		}
+		
+		BlockingQueue<Unknown> firstQueue = new LinkedBlockingQueue<Unknown>(100);
+		EnsembleProducer theProducer = new EnsembleProducer (volsToProcess, firstQueue, inputDir, isPairtree, ensembleSize);
+		
+		BlockingQueue<Unknown> secondQueue = new LinkedBlockingQueue<Unknown>(100);
+		EnsembleAssembler firstModeler = new EnsembleAssembler(ensemble.get(0), modelNames.get(0), modelInstructions.get(0), numVolumes, 
+				firstQueue, secondQueue);
+		
+		BlockingQueue<Unknown> thirdQueue = new LinkedBlockingQueue<Unknown>(100);
+		EnsembleAssembler secondModeler = new EnsembleAssembler(ensemble.get(1), modelNames.get(1), modelInstructions.get(1), numVolumes, 
+				secondQueue, thirdQueue);
+		
+		BlockingQueue<Unknown> fourthQueue = new LinkedBlockingQueue<Unknown>(100);
+		EnsembleAssembler thirdModeler = new EnsembleAssembler(ensemble.get(2), modelNames.get(2), modelInstructions.get(2), numVolumes, 
+				thirdQueue, fourthQueue);
+		
+		BlockingQueue<Unknown> fifthQueue = new LinkedBlockingQueue<Unknown>(100);
+		EnsembleAssembler fourthModeler = new EnsembleAssembler(ensemble.get(3), modelNames.get(3), modelInstructions.get(3), numVolumes, 
+				fourthQueue, fifthQueue);
+		
+		EnsembleOutput finalResults = new EnsembleOutput(dirForOutput, fifthQueue, numVolumes, ensembleSize, 
+				modelNames, ensemble.get(0).genreList.genreLabels , ensemble.get(0).genreList.genreIndex);
+		
+		new Thread(theProducer).start();
+		new Thread(firstModeler).start();
+		new Thread(secondModeler).start();
+		new Thread(thirdModeler).start();
+		new Thread(fourthModeler).start();
+		new Thread(finalResults).start();
+		
 		System.out.println("DONE.");
 	}
 

@@ -71,7 +71,7 @@ public class GenrePredictorMulticlass extends GenrePredictor implements
 			
 			if (Global.outputJSON) {
 				JSONResultWriter writer = new JSONResultWriter(outPath, "multiclassforest", genres);
-				writer.writeJSON(thisVolume, rawResult, smoothedResult);
+				writer.writeJSON(thisVolume.numPoints, thisVolume.getFirstVolID(), rawResult, smoothedResult);
 			}
 			else {
 			
