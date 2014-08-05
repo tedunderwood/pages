@@ -17,7 +17,7 @@ import weka.core.Instances;
  */
 public class WekaDriverMulticlass implements java.io.Serializable {
 	RandomForest forest;
-	Instances trainingSet;
+	transient Instances trainingSet;
 	ArrayList<Attribute> featureNames;
 	int numFeatures;
 	int numInstances;
@@ -100,6 +100,25 @@ public class WekaDriverMulticlass implements java.io.Serializable {
 	
 	public double[][] getPredictions() {
 		return memberProbs;
+	}
+	
+	public void recreateDataset (GenreList genres, ArrayList<String> features) {
+		featureNames = new ArrayList<Attribute>(numFeatures + 1);
+		for (int i = 0; i < numFeatures; ++ i) {
+			Attribute a = new Attribute(features.get(i));
+			featureNames.add(a);
+		}
+		
+		// Now we add the class attribute.
+		ArrayList<String> classValues = new ArrayList<String>(numGenres);
+		for (String genre : genres.genreLabels) {
+			classValues.add(genre);
+		}
+		Attribute classAttribute = new Attribute("ClassAttribute", classValues);
+		featureNames.add(classAttribute);
+		
+		trainingSet = new Instances("multiclassForest", featureNames, numInstances);
+		trainingSet.setClassIndex(numFeatures);
 	}
 	
 	public double[][] testNewInstances(ArrayList<DataPoint> pointsToTest) {

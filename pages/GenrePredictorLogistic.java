@@ -31,5 +31,9 @@ public class GenrePredictorLogistic extends GenrePredictor implements
 		double[][] probabilities = theClassifier.testNewInstances(pointsToTest);
 		return probabilities;
 	}
+	
+	public void recreateDataset(GenreList genres, ArrayList<String> features) {
+		theClassifier.recreateDataset(genres, features);
+	}
 
 }

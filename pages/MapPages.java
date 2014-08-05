@@ -39,7 +39,7 @@ public class MapPages {
 	static int NTHREADS = 10;
 	static int NFOLDS = 5;
 	static int minutesToWait = 30;
-	static String RIDGE = "3";
+	static String RIDGE = "32";
 	static int featureCount;
 	static int numGenres;
 	static int numInstances;
@@ -107,7 +107,7 @@ public class MapPages {
 		String featureDir;
 		String genreDir;
 		String additionalTrainingDir = null;
-		String vocabPath = "/Users/tunder/Dropbox/pagedata/newmethodvocabulary.txt";
+		String vocabPath = "/Users/tunder/Dropbox/pagedata/thousandvocabulary.txt";
 		
 		if (parser.isPresent("-output")) {
 			dirForOutput = parser.getString("-output");
@@ -829,22 +829,22 @@ public class MapPages {
 			ensemble.add(deserializeModel(aPath));
 		}
 		
-		BlockingQueue<Unknown> firstQueue = new LinkedBlockingQueue<Unknown>(100);
+		BlockingQueue<Unknown> firstQueue = new LinkedBlockingQueue<Unknown>(20);
 		EnsembleProducer theProducer = new EnsembleProducer (volsToProcess, firstQueue, inputDir, isPairtree, ensembleSize);
 		
-		BlockingQueue<Unknown> secondQueue = new LinkedBlockingQueue<Unknown>(100);
+		BlockingQueue<Unknown> secondQueue = new LinkedBlockingQueue<Unknown>(20);
 		EnsembleAssembler firstModeler = new EnsembleAssembler(ensemble.get(0), modelNames.get(0), modelInstructions.get(0), numVolumes, 
 				firstQueue, secondQueue);
 		
-		BlockingQueue<Unknown> thirdQueue = new LinkedBlockingQueue<Unknown>(100);
+		BlockingQueue<Unknown> thirdQueue = new LinkedBlockingQueue<Unknown>(20);
 		EnsembleAssembler secondModeler = new EnsembleAssembler(ensemble.get(1), modelNames.get(1), modelInstructions.get(1), numVolumes, 
 				secondQueue, thirdQueue);
 		
-		BlockingQueue<Unknown> fourthQueue = new LinkedBlockingQueue<Unknown>(100);
+		BlockingQueue<Unknown> fourthQueue = new LinkedBlockingQueue<Unknown>(20);
 		EnsembleAssembler thirdModeler = new EnsembleAssembler(ensemble.get(2), modelNames.get(2), modelInstructions.get(2), numVolumes, 
 				thirdQueue, fourthQueue);
 		
-		BlockingQueue<Unknown> fifthQueue = new LinkedBlockingQueue<Unknown>(100);
+		BlockingQueue<Unknown> fifthQueue = new LinkedBlockingQueue<Unknown>(20);
 		EnsembleAssembler fourthModeler = new EnsembleAssembler(ensemble.get(3), modelNames.get(3), modelInstructions.get(3), numVolumes, 
 				fourthQueue, fifthQueue);
 		

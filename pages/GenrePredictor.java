@@ -40,5 +40,8 @@ public class GenrePredictor implements Serializable {
 			Vocabulary vocabulary, FeatureNormalizer normalizer, boolean isPairtree) {
 		
 	}
+	
+	public void recreateDataset(GenreList genres, ArrayList<String> features) {
+	}
 
 }

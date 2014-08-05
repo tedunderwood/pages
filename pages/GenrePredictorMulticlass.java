@@ -129,4 +129,8 @@ public class GenrePredictorMulticlass extends GenrePredictor implements
 		
 	}
 	
+	public void recreateDataset(GenreList genres, ArrayList<String> features) {
+		theClassifier.recreateDataset(genres, features);
+	}
+	
 }

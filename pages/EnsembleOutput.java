@@ -59,6 +59,7 @@ public class EnsembleOutput implements Runnable {
 				ClassificationResult consensus = reconcilePredictions(volume.rawResults, volume.smoothResults, numPoints);
 				JSONResultWriter writer = new JSONResultWriter(outPath, "ensemble", genreLabels);
 				writer.writeConsensus(thisFile, consensus, numPoints);
+				volume = null;
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}

@@ -3,6 +3,7 @@
  */
 package pages;
 import java.util.ArrayList;
+
 // import java.io.File;
 import weka.classifiers.Evaluation;
 import weka.classifiers.functions.Logistic;
@@ -17,7 +18,7 @@ import weka.core.DenseInstance;
 public class WekaDriver implements java.io.Serializable {
 	
 	Logistic logistic;
-	Instances trainingSet;
+	transient Instances trainingSet;
 	ArrayList<Attribute> featureNames;
 	int numFeatures;
 	int numInstances;
@@ -132,6 +133,24 @@ public class WekaDriver implements java.io.Serializable {
 	
 	public double[][] getPredictions() {
 		return memberProbs;
+	}
+	
+	public void recreateDataset (GenreList genres, ArrayList<String> features) {
+		featureNames = new ArrayList<Attribute>(numFeatures + 1);
+		for (int i = 0; i < numFeatures; ++ i) {
+			Attribute a = new Attribute(features.get(i));
+			featureNames.add(a);
+		}
+		
+		// Now we add the class attribute.
+		ArrayList<String> classValues = new ArrayList<String>(2);
+		classValues.add("positive");
+		classValues.add("negative");
+		Attribute classAttribute = new Attribute("ClassAttribute", classValues);
+		featureNames.add(classAttribute);
+		
+		trainingSet = new Instances(classLabel, featureNames, numInstances);
+		trainingSet.setClassIndex(numFeatures);
 	}
 	
 	public double[][] testNewInstances(ArrayList<DataPoint> pointsToTest) {
