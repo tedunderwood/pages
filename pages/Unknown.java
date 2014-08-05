@@ -51,7 +51,7 @@ public class Unknown {
 	}
 	
 	public ClassificationResult getRaw(int j) {
-		return smoothResults.get(j);
+		return rawResults.get(j);
 	}
 	
 }

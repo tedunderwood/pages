@@ -43,8 +43,8 @@ public class EnsembleOutput implements Runnable {
 		for (int i = 0; i < numVolumes; ++i) {
 			try {
 				Unknown volume = inQueue.poll(10, TimeUnit.MINUTES);
-				int queuelen = inQueue.size();
-				System.out.println("Iteration " + i + " with queue at " + queuelen);
+				// int queuelen = inQueue.size();
+				// System.out.println("Iteration " + i + " with queue at " + queuelen);
 				int numPoints = volume.getNumPoints();
 				String thisFile = volume.getLabel();
 				String outFile = thisFile + ".predict";
@@ -56,7 +56,7 @@ public class EnsembleOutput implements Runnable {
 					writer.writeJSON(numPoints, thisFile, volume.getRaw(j), volume.getSmooth(j));
 				}
 			
-				ClassificationResult consensus = reconcilePredictions(volume.smoothResults, volume.rawResults, numPoints);
+				ClassificationResult consensus = reconcilePredictions(volume.rawResults, volume.smoothResults, numPoints);
 				JSONResultWriter writer = new JSONResultWriter(outPath, "ensemble", genreLabels);
 				writer.writeConsensus(thisFile, consensus, numPoints);
 			} catch (InterruptedException e) {

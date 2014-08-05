@@ -30,11 +30,12 @@ public class EnsembleProducer implements Runnable {
 	public void run() {
 		for (String thisFile : filesToProcess) {
 			ArrayList<String> filelines;
+			String cleanID = PairtreeReader.cleanID(thisFile);
 			
 			if (isPairtree) {
 				PairtreeReader reader = new PairtreeReader(inputDir);
 				filelines = reader.getVolume(thisFile);
-				Unknown mystery = new Unknown(thisFile, filelines, numModels);
+				Unknown mystery = new Unknown(cleanID, filelines, numModels);
 				try {
 					outQueue.offer(mystery, 10, TimeUnit.MINUTES);
 				} catch (InterruptedException e) {
@@ -46,7 +47,7 @@ public class EnsembleProducer implements Runnable {
 				LineReader fileSource = new LineReader(volumePath);
 				try {
 					filelines = fileSource.readList();
-					Unknown mystery = new Unknown(thisFile, filelines, numModels);
+					Unknown mystery = new Unknown(cleanID, filelines, numModels);
 					outQueue.offer(mystery, 10, TimeUnit.MINUTES);
 				}
 				catch (InputFileException e) {
