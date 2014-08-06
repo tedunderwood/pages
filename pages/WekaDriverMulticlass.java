@@ -102,6 +102,15 @@ public class WekaDriverMulticlass implements java.io.Serializable {
 		return memberProbs;
 	}
 	
+	/**
+	 * The Instances object that defines the dataset is defined transient, since
+	 * it also contains bulky training data that becomes problematic if serialized.
+	 * This method recreates the dataset definition without adding training data.
+	 * It's designed for use in reconstituting an ensemble of models.
+	 * 
+	 * @param	genres	Genre list associated with model.
+	 * @param 	features	List of features from model.normalizer.
+	 */
 	public void recreateDataset (GenreList genres, ArrayList<String> features) {
 		featureNames = new ArrayList<Attribute>(numFeatures + 1);
 		for (int i = 0; i < numFeatures; ++ i) {
