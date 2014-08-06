@@ -43,23 +43,29 @@ public class EnsembleOutput implements Runnable {
 		for (int i = 0; i < numVolumes; ++i) {
 			try {
 				Unknown volume = inQueue.poll(10, TimeUnit.MINUTES);
-				// int queuelen = inQueue.size();
-				// System.out.println("Iteration " + i + " with queue at " + queuelen);
-				int numPoints = volume.getNumPoints();
-				String thisFile = volume.getLabel();
-				String outFile = thisFile + ".predict";
-				String outPath = outputDir + "/" + outFile;
 				
-				for (int j = 0; j < numModels; ++j) {
-					String name = modelNames.get(j);
-					JSONResultWriter writer = new JSONResultWriter(outPath, name, genreLabels);
-					writer.writeJSON(numPoints, thisFile, volume.getRaw(j), volume.getSmooth(j));
+				// We need to check that this volume has a result associated with each model.
+				// Otherwise don't print anything.
+				int numResults = volume.getNumResults();
+				if (numResults == numModels) {
+					int numPoints = volume.getNumPoints();
+					String thisFile = volume.getLabel();
+					String outFile = thisFile + ".predict";
+					String outPath = outputDir + "/" + outFile;
+					
+					for (int j = 0; j < numModels; ++j) {
+						String name = modelNames.get(j);
+						JSONResultWriter writer = new JSONResultWriter(outPath, name, genreLabels);
+						writer.writeJSON(numPoints, thisFile, volume.getRaw(j), volume.getSmooth(j));
+					}
+				
+					ClassificationResult consensus = reconcilePredictions(volume.rawResults, volume.smoothResults, numPoints);
+					JSONResultWriter writer = new JSONResultWriter(outPath, "ensemble", genreLabels);
+					writer.writeConsensus(thisFile, consensus, numPoints);
 				}
-			
-				ClassificationResult consensus = reconcilePredictions(volume.rawResults, volume.smoothResults, numPoints);
-				JSONResultWriter writer = new JSONResultWriter(outPath, "ensemble", genreLabels);
-				writer.writeConsensus(thisFile, consensus, numPoints);
 				volume = null;
+				// Here we are freeing up the object at the end of the assembly line to avoid
+				// a possible memory leak.
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}

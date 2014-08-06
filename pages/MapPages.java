@@ -883,12 +883,11 @@ public class MapPages {
 	 * @return A directory that ends with a slash.
 	 */
 	private static String validateDirectory(String dir, String description) {
+		if (!dir.endsWith("/")) dir = dir + "/";
 		File outputCheck = new File(dir);
 		if (!outputCheck.isDirectory()) {
-			System.out.println("This run is going to fail, because the " + description + " directory doesn't exist.");
-			System.exit(0);
-		}
-		if (!dir.endsWith("/")) dir = dir + "/";
+			outputCheck.mkdir();
+		}	
 		return dir;
 	}
 }

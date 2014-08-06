@@ -30,6 +30,10 @@ public class Unknown {
 		return numPoints;
 	}
 	
+	public int getNumResults() {
+		return rawResults.size();
+	}
+	
 	public ArrayList<String> getLines() {
 		return filelines;
 	}

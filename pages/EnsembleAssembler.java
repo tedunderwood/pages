@@ -12,9 +12,18 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author tunder
+ * Implements ensembles as an assembly line of threads, each serving a different
+ * model, and connected by BlockingQueues.
+ * 
+ * @param 	model	The model making predictions.
+ * @param	name	Model name.
+ * @param	modelType	Tells us whether this is a multiclass random forest, or an array
+ * 						of one-vs-all logistic models.
+ * @param 	inQueue		Transports Unknowns from the previous stage of the assembly line.
+ * @param 	outQueue	Transports Unknowns to the next stage of the assembly line.
  *
  */
+
 public class EnsembleAssembler implements Runnable {
 	private Model model;
 	private String name;
@@ -35,6 +44,8 @@ public class EnsembleAssembler implements Runnable {
 		this.inQueue = inQueue;
 		this.outQueue = outQueue;
 		
+		// In addition to simply storing parameters, the constructor re-creates part of the model
+		// that is defined transient and may not have been serialized: the dataset definition.
 		GenreList genrelist = model.genreList;
 		numGenres = genrelist.getSize();
 		ArrayList<String> features = model.normalizer.features;
@@ -99,7 +110,10 @@ public class EnsembleAssembler implements Runnable {
 				Arrays.fill(probs, 0);
 				rawProbs.add(probs);
 			}
-// model
+			
+			// The logistic approach I use builds separate classifiers for each
+			// genre in a one-vs-all fashion. We speed up this embarrassingly
+			// parallel problem with an executor service.
 			final ExecutorService executor = Executors.newFixedThreadPool(4);
 			
 			ArrayList<Future<double[][]>> summaries = new ArrayList<Future<double[][]>>(numGenres-2);
@@ -130,6 +144,9 @@ public class EnsembleAssembler implements Runnable {
 				}
 			}
 		}
+		
+		// Whatever type of model this is, the remaining steps are the same.
+		// Smooth predictions using a hidden Markov model.
 				
 		ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
 	
