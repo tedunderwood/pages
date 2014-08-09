@@ -7,7 +7,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author tunder
+ * In the assembly-line implementation of ensemble classification, this class is basically
+ * a factory for the Unknowns that will represent the volumes being classified as they
+ * slide through the assembly line from model to model.
+ * 
+ * @param	filesToProcess	A list of volume IDs to process.
+ * @param 	outQueue		The BlockingQueue that is going to take Unknowns to the
+ * 							next stage of assembly.
  *
  */
 public class EnsembleProducer implements Runnable {

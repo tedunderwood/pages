@@ -39,7 +39,7 @@ public class MapPages {
 	static int NTHREADS = 10;
 	static int NFOLDS = 5;
 	static int minutesToWait = 30;
-	static String RIDGE = "32";
+	static String RIDGE = "3";
 	static int featureCount;
 	static int numGenres;
 	static int numInstances;
@@ -107,7 +107,7 @@ public class MapPages {
 		String featureDir;
 		String genreDir;
 		String additionalTrainingDir = null;
-		String vocabPath = "/Users/tunder/Dropbox/pagedata/thousandvocabulary.txt";
+		String vocabPath = "/Users/tunder/Dropbox/pagedata/newmethodvocabulary.txt";
 		
 		if (parser.isPresent("-output")) {
 			dirForOutput = parser.getString("-output");
@@ -746,50 +746,61 @@ public class MapPages {
 		return hathiIDs;
 	}
 	
-	private static void applyEnsemble(String ensembleFolder, String inputDir, ArrayList<String> volsToProcess, 
-			String dirForOutput, boolean isPairtree) {
-		ArrayList<String> ensembleInstructions  = new ArrayList<String>();
-		String ensembleInstructionPath = ensembleFolder + "instructions.tsv";
-		LineReader reader = new LineReader(ensembleInstructionPath);
-
-		try {
-			ensembleInstructions = reader.readList();
-		}
-		catch (InputFileException e) {
-			System.out.println("Missing ensemble file: " + ensembleInstructionPath);
-			System.exit(0);
-		}
-		
-		ArrayList<String> modelPaths = DirectoryList.getMatchingPaths(ensembleFolder, ".ser");
-		ArrayList<String> modelNames = new ArrayList<String>();
-		ArrayList<String> modelInstructions = new ArrayList<String>();
-		for (int i = 0; i < modelPaths.size(); ++i) {
-			String thisPath = modelPaths.get(i);
-			boolean matched = false;
-			for (int j = 0; j < ensembleInstructions.size(); ++ j) {
-				String[] fields = ensembleInstructions.get(j).split("\t");
-				if (fields[0].equals(thisPath)) {
-					modelNames.add(fields[1]);
-					modelInstructions.add(fields[2]);
-					matched = true;
-				}
-			}
-			if (!matched) System.out.println("No match found for a model in instruction file.");
-		}
-		
-		int ensembleSize = modelNames.size();
-		ArrayList<Model> ensemble = new ArrayList<Model>(ensembleSize);
-		for (String aPath : modelPaths) {
-			ensemble.add(deserializeModel(aPath));
-		}
-		for (String thisFile : volsToProcess) {
-			
-			EnsembleThread runEnsemble = new EnsembleThread(thisFile, inputDir, dirForOutput, ensemble, 
-				modelNames, modelInstructions, isPairtree);
-		}
-		System.out.println("DONE.");
-	}
+//	private static void applyEnsemble(String ensembleFolder, String inputDir, ArrayList<String> volsToProcess, 
+//			String dirForOutput, boolean isPairtree) {
+//		ArrayList<String> ensembleInstructions  = new ArrayList<String>();
+//		String ensembleInstructionPath = ensembleFolder + "instructions.tsv";
+//		LineReader reader = new LineReader(ensembleInstructionPath);
+//
+//		try {
+//			ensembleInstructions = reader.readList();
+//		}
+//		catch (InputFileException e) {
+//			System.out.println("Missing ensemble file: " + ensembleInstructionPath);
+//			System.exit(0);
+//		}
+//		
+//		ArrayList<String> modelPaths = DirectoryList.getMatchingPaths(ensembleFolder, ".ser");
+//		ArrayList<String> modelNames = new ArrayList<String>();
+//		ArrayList<String> modelInstructions = new ArrayList<String>();
+//		for (int i = 0; i < modelPaths.size(); ++i) {
+//			String thisPath = modelPaths.get(i);
+//			boolean matched = false;
+//			for (int j = 0; j < ensembleInstructions.size(); ++ j) {
+//				String[] fields = ensembleInstructions.get(j).split("\t");
+//				if (fields[0].equals(thisPath)) {
+//					modelNames.add(fields[1]);
+//					modelInstructions.add(fields[2]);
+//					matched = true;
+//				}
+//			}
+//			if (!matched) System.out.println("No match found for a model in instruction file.");
+//		}
+//		
+//		int ensembleSize = modelNames.size();
+//		ArrayList<Model> ensemble = new ArrayList<Model>(ensembleSize);
+//		for (String aPath : modelPaths) {
+//			ensemble.add(deserializeModel(aPath));
+//		}
+//		for (String thisFile : volsToProcess) {
+//			
+//			EnsembleThread runEnsemble = new EnsembleThread(thisFile, inputDir, dirForOutput, ensemble, 
+//				modelNames, modelInstructions, isPairtree);
+//		}
+//		System.out.println("DONE.");
+//	}
 	
+	/**
+	 * Implements ensemble classification using an assembly-line structure where models
+	 * constitute separate threads running concurrently, and each volume to
+	 * be classified is passed from model to model. The volume-reader and result-writer
+	 * are also separate threads.
+	 * @param ensembleFolder	Holding the model and a textfile of instructions.
+	 * @param inputDir	Of files to be processed.
+	 * @param volsToProcess	A list of file IDs.
+	 * @param dirForOutput	Directory for results.
+	 * @param isPairtree	Whether the files to be classified are stored in a pairtree.
+	 */
 	private static void parallelizeEnsemble(String ensembleFolder, String inputDir, ArrayList<String> volsToProcess, 
 			String dirForOutput, boolean isPairtree) {
 		ArrayList<String> ensembleInstructions  = new ArrayList<String>();
@@ -824,10 +835,14 @@ public class MapPages {
 		int ensembleSize = modelNames.size();
 		int numVolumes = volsToProcess.size();
 		
+		// Deserialize each of the models.
 		ArrayList<Model> ensemble = new ArrayList<Model>(ensembleSize);
 		for (String aPath : modelPaths) {
 			ensemble.add(deserializeModel(aPath));
 		}
+		
+		// Now we construct the assembly line, connecting each part to the next
+		// with blocking queues.
 		
 		BlockingQueue<Unknown> firstQueue = new LinkedBlockingQueue<Unknown>(20);
 		EnsembleProducer theProducer = new EnsembleProducer (volsToProcess, firstQueue, inputDir, isPairtree, ensembleSize);
@@ -857,6 +872,10 @@ public class MapPages {
 		new Thread(thirdModeler).start();
 		new Thread(fourthModeler).start();
 		new Thread(finalResults).start();
+		
+		// Right now this is not very robust. It terminates because each of these threads is
+		// counting files to process and we expect them all to go through all the files. There's
+		// no provision for catching failures.
 		
 		System.out.println("DONE.");
 	}
