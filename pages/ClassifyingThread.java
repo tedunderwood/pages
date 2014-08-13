@@ -73,8 +73,12 @@ public class ClassifyingThread implements Runnable {
 					rawProbs.get(j)[i] = probs[j][0];
 				}
 			}
+			double[] wordLengths = new double[numPoints];
+			for (int i = 0; i < numPoints; ++i) {
+				wordLengths[i] = thesePages.get(i).wordcount;
+			}
 			
-			ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
+			ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov, wordLengths);
 			// smoothedProbs = ForwardBackward.smooth(smoothedProbs, markov);
 			// This is really silly, but in practice it works: run the Markov smoothing twice!
 	

@@ -77,6 +77,7 @@ public class EnsembleThread {
 				return;
 			}
 			
+			ArrayList<DataPoint> thesePages = thisVolume.datapoints;
 			ArrayList<double[]> rawProbs;
 			if (modelType.equals("-multiclassforest")) {
 				GenrePredictorMulticlass forest = (GenrePredictorMulticlass) classifiers.get(0);
@@ -84,7 +85,7 @@ public class EnsembleThread {
 			}
 			else {
 				// We assume model type is -onevsalllogistic.
-				ArrayList<DataPoint> thesePages = thisVolume.datapoints;
+				
 				rawProbs = new ArrayList<double[]>(numPoints);
 				for (int i = 0; i < numPoints; ++i) {
 					double[] probs = new double[numGenres];
@@ -101,8 +102,12 @@ public class EnsembleThread {
 					}
 				}
 			}
-				
-			ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
+			
+			double[] wordLengths = new double[numPoints];
+			for (int i = 0; i < numPoints; ++i) {
+				wordLengths[i] = thesePages.get(i).wordcount;
+			}
+			ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov, wordLengths);
 	
 			ClassificationResult rawResult = new ClassificationResult(rawProbs, numGenres, genres);
 			ClassificationResult smoothedResult = new ClassificationResult(smoothedProbs, numGenres, genres);

@@ -110,6 +110,7 @@ public class Volume {
 		double[] vector = new double[dimensionality];
 		Arrays.fill(vector, 0);
 		
+		double sumAllWords = 0d;
 		// Then sum all occurrences of words to the appropriate vector index.
 		for (String[] feature : sparseTable) {
 			String word = feature[2];
@@ -117,10 +118,12 @@ public class Volume {
 				int idx = vocabularyMap.get(word);
 				double count = Double.parseDouble(feature[3]);
 				vector[idx] += count;
+				sumAllWords += count;
+				// perhaps make sure structural features not included in sum
 			}
 		}
 		
-		DataPoint point = new DataPoint(volumeID, vector);
+		DataPoint point = new DataPoint(volumeID, vector, sumAllWords);
 		return point;
 	}
 	
@@ -429,7 +432,7 @@ public class Volume {
 			}
 			
 			String label = volumeID + "," + Integer.toString(thisPageNum);
-			DataPoint thisPoint = new DataPoint(label, vector);
+			DataPoint thisPoint = new DataPoint(label, vector, sumAllWords);
 			points.add(thisPoint);
 		}
 	return points;	

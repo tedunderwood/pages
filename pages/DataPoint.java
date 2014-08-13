@@ -18,9 +18,11 @@ public class DataPoint {
 	double magnitude;
 	// we define this as the L2 norm or Euclidean length
 	public String genre;
+	public double wordcount;
 	
-	public DataPoint(String label, double[] vector){
+	public DataPoint(String label, double[] vector, double sumAllWords){
 		this.label = label;
+		this.wordcount = sumAllWords;
 		String[] parts = label.split(",");
 		this.volume = parts[0];
 		if (parts.length > 1) {

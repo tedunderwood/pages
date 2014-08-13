@@ -96,6 +96,7 @@ public class EnsembleAssembler implements Runnable {
 			return beingClassified;
 		}
 		
+		ArrayList<DataPoint> thesePages = thisVolume.datapoints;
 		ArrayList<double[]> rawProbs;
 		if (modelType.equals("-multiclassforest")) {
 			GenrePredictorMulticlass forest = (GenrePredictorMulticlass) classifiers.get(0);
@@ -103,7 +104,7 @@ public class EnsembleAssembler implements Runnable {
 		}
 		else {
 			// We assume model type is -onevsalllogistic.
-			ArrayList<DataPoint> thesePages = thisVolume.datapoints;
+			
 			rawProbs = new ArrayList<double[]>(numPoints);
 			for (int i = 0; i < numPoints; ++i) {
 				double[] probs = new double[numGenres];
@@ -145,10 +146,14 @@ public class EnsembleAssembler implements Runnable {
 			}
 		}
 		
+		double[] wordLengths = new double[numPoints];
+		for (int i = 0; i < numPoints; ++i) {
+			wordLengths[i] = thesePages.get(i).wordcount;
+		}
 		// Whatever type of model this is, the remaining steps are the same.
 		// Smooth predictions using a hidden Markov model.
 				
-		ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov);
+		ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov, wordLengths);
 	
 		ClassificationResult rawResult = new ClassificationResult(rawProbs, numGenres, genres);
 		ClassificationResult smoothResult = new ClassificationResult(smoothedProbs, numGenres, genres);

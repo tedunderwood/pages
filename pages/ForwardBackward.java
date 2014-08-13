@@ -16,10 +16,16 @@ public class ForwardBackward {
 		System.out.println(row[0] + "\t" + row[1] + "\t" + row[2]);
 	}
 
-	public static ArrayList<double[]> smooth(ArrayList<double[]> evidenceVectors, MarkovTable markov) {
+	public static ArrayList<double[]> smooth(ArrayList<double[]> evidenceVectors, MarkovTable markov, double[] wordLengths) {
 		 
 		int time = evidenceVectors.size();
 		int numGenres = evidenceVectors.get(0).length;
+		
+		int frontmatter = time / 20;
+		int backmatter = time - (time / 20);
+		
+		// These are not v. determinative; they just define regions of the volume where we consider
+		// blank pages informative.
 		
 		// Forward.
 		ArrayList<double[]> forward = new ArrayList<double[]>();
@@ -57,21 +63,29 @@ public class ForwardBackward {
 				}	
 			}
 			// Now nextstep contains the one-step-ahead predictive density.
-		
-			for (int j = 0; j < numGenres; ++j) {
-				nextstep[j] = nextstep[j] * evidenceVectors.get(i)[j];
-				sum += nextstep[j];
+			if (wordLengths[i] > 5 | i < frontmatter | i > backmatter) {
+				// We only consider the evidence vector if there are some words on
+				// this page. Exceptions are near the front and back of the book
+				// where the presence of blank pages tends to tell us we're still
+				// in paratextland.
+				for (int j = 0; j < numGenres; ++j) {
+					nextstep[j] = nextstep[j] * evidenceVectors.get(i)[j];
+					sum += nextstep[j];
+				}
+			}
+			else {
+				for (int j = 0; j < numGenres; ++j) {
+					// Blank or nearly-blank pages flatten out the evidence
+					// to reflect greater uncertainty. Another way to put this
+					// is that they transmit the influence of previous pages in
+					// this sequence with relatively little alteration.
+					nextstep[j] = nextstep[j] * (evidenceVectors.get(i)[j] + 0.2d);
+					sum += nextstep[j];
+				}
 			}
 			probabilityOfTheEvidence.add(sum);
 			nextstep = normalize(nextstep, sum);
-			
-//			// error-checking
-//			if (Double.isNaN(sum) | sum == 0) {
-//				System.out.println("At step " + String.valueOf(i));
-//				System.out.println("sum = " + String.valueOf(sum));
-//			}
-			
-			
+					
 			forward.add(nextstep);
 			
 		}
@@ -107,7 +121,14 @@ public class ForwardBackward {
 					double inStateK = backward.get(i+1)[k];
 					nextstep[j] += inStateK * fromStateJ[k];
 				}
-				nextstep[j] = nextstep[j] * evidenceVectors.get(i)[j];
+				if (wordLengths[i] > 5 | i < frontmatter | i > backmatter) {
+					nextstep[j] = nextstep[j] * evidenceVectors.get(i)[j];
+				}
+				else {
+					nextstep[j] = nextstep[j] * (evidenceVectors.get(i)[j] + 0.2d);
+					// blank or nearly-blank pages flatten out the evidence
+					// to reflect greater uncertainty
+				}
 				sum += nextstep[j];
 			}
 			// Now nextstep contains the one-step-ahead predictive density.
@@ -115,9 +136,6 @@ public class ForwardBackward {
 			nextstep = normalize(nextstep, sum);
 			backward.set(i, nextstep);
 		}
-		
-// No longer needed; was used to debug.	
-//		writeComponents("/Users/tunderwood/uniquefiction/", forward, backward, evidenceVectors);
 		
 		// Now to combine.
 		ArrayList<double[]> forwardbackward = new ArrayList<double[]>();
