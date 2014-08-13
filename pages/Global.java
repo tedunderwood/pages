@@ -17,8 +17,7 @@ public class Global {
 		"capRatio", "wordRatio", "distanceFromMid", "allCapRatio", "maxInitialRatio", "maxPairRatio", 
 		"wordsPerLine", "totalWords", "typeToken", "commasNorm", "periodsNorm", "quotationsNorm",
 		"exclamationsNorm", "questionsNorm", "endWithPunct", "endWithNum", "startWithName", "startWithRubric",
-		"capSequence", "capSeqNorm", "startRatio", "absWordRatio", "metaBiography", "metaFiction",
-		"litprob", "bioprob"};
+		"capSequence", "capSeqNorm", "startRatio", "absWordRatio", "metaBiography", "metaFiction"};
 	
 		// "posInVol" = pagenum / totalpages
 		// "lineLengthRatio" = textlines / mean lines per page
@@ -44,6 +43,9 @@ public class Global {
 		// "capSeqNorm" = Sequential caps normalized for the number of capitalized lines.
 		// "startRatio" = (startWName * startWRubric) / wordNotinVocab
 		// "absWordRatio" = absolute deviation from word mean for vol, normalized by word mean
+		// "metaBiography" = a flag based on metadata telling us this is biography
+		// "metaFiction" = a flag based on metadata that this is fiction
+		// "metaDrama" and "metaPoetry" are not currently used because they don't in practice help.
 	public static final int FEATURESADDED = STRUCTURALFEATURES.length;
 	
 //	public static final String[][] CONVERSIONS = { { "colop", "back" },

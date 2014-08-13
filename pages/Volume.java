@@ -363,15 +363,15 @@ public class Volume {
 			// distanceFrom Mid: absolute distance from midpoint of volume, normalized for length of volume
 			vector[vocabularySize + 5] = allcapwords / sumAllWords;
 			// "allCapRatio" = words in all caps / words on this page
-			vector[vocabularySize + 6] = maxinitial / textlines;
+			vector[vocabularySize + 6] = (maxinitial + 0.3d) / (textlines + 0.5d);
 			// "maxInitalRatio" = largest number of repeated initials / textlines
-			vector[vocabularySize + 7] = maxpair / textlines;		
+			vector[vocabularySize + 7] = (maxpair + 0.2d) / (textlines + 0.5d);		
 			// "maxPairRatio" = largest number of repeats for alphabetically adjacent initials / textlines
 			vector[vocabularySize + 8] = sumAllWords / textlines;
 			// "wordsPerLine" = total words on page / total lines on page
 			vector[vocabularySize + 9] = sumAllWords;
 			// "totalWords" = total words on page
-			vector[vocabularySize + 10] = types / sumAllWords;
+			vector[vocabularySize + 10] = (types + 0.1d) / (sumAllWords + 0.1d);
 			// type-token ratio
 			vector[vocabularySize + 11] = commas / sumAllWords;
 			// commas normalized for wordcount
@@ -385,7 +385,7 @@ public class Volume {
 			// exclamation points normalized for wordcount
 			vector[vocabularySize + 15] = questionmarks / sumAllWords;
 			// question marks normalized for wordcount
-			vector[vocabularySize + 16] = endwpunct / textlines;
+			vector[vocabularySize + 16] = (endwpunct + 0.1d) / (textlines + 0.3d);
 			// Proportion of lines ending with punctuation.
 			vector[vocabularySize + 17] = endwnumeral / textlines;
 			// Proportion of lines ending with a digit as either of last two chars.
@@ -395,7 +395,7 @@ public class Volume {
 			// Proportion of lines starting with a capitalized word that ends w/ a period.
 			vector[vocabularySize + 20] = sequentialcaps;
 			// Largest number of capitalized initials in alphabetical sequence.
-			vector[vocabularySize + 21] = sequentialcaps / (caplines + 0.0001);
+			vector[vocabularySize + 21] = (sequentialcaps + 0.2d) / (caplines + 2.0d);
 			// Sequential caps normalized for the number of capitalized lines.
 			vector[vocabularySize + 22] = 0;
 			// stdev / (sumAllWords / textlines);
@@ -414,21 +414,6 @@ public class Volume {
 				vector[vocabularySize + 25] = 1;
 			} else {
 				vector[vocabularySize + 25] = 0;
-			}
-
-			// vector[vocabularySize + 24] = 0;
-			// vector[vocabularySize + 25] = 0;
-			
-			if (metadataFeatures.containsKey("##litprob")) {
-				vector[vocabularySize + 26] = metadataFeatures.get("#litprob");
-			} else {
-				vector[vocabularySize + 26] = 0.0d;
-			}
-			
-			if (metadataFeatures.containsKey("##bioprob")) {
-				vector[vocabularySize + 27] = metadataFeatures.get("#bioprob");
-			} else {
-				vector[vocabularySize + 27] = 0.0d;
 			}
 			
 			String label = volumeID + "," + Integer.toString(thisPageNum);

@@ -39,7 +39,7 @@ public class MapPages {
 	static int NTHREADS = 10;
 	static int NFOLDS = 5;
 	static int minutesToWait = 30;
-	static String RIDGE = "30";
+	static String RIDGE = "3";
 	static int featureCount;
 	static int numGenres;
 	static int numInstances;
@@ -107,7 +107,7 @@ public class MapPages {
 		String featureDir;
 		String genreDir;
 		String additionalTrainingDir = null;
-		String vocabPath = "/Users/tunder/Dropbox/pagedata/reducedvocabulary2.txt";
+		String vocabPath = "/Users/tunder/Dropbox/pagedata/newmethodvocabulary.txt";
 		
 		if (parser.isPresent("-output")) {
 			dirForOutput = parser.getString("-output");

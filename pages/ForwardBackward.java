@@ -21,8 +21,8 @@ public class ForwardBackward {
 		int time = evidenceVectors.size();
 		int numGenres = evidenceVectors.get(0).length;
 		
-		int frontmatter = time / 20;
-		int backmatter = time - (time / 20);
+		int frontmatter = time / 10;
+		int backmatter = time - (time / 8);
 		
 		// These are not v. determinative; they just define regions of the volume where we consider
 		// blank pages informative.
@@ -79,7 +79,7 @@ public class ForwardBackward {
 					// to reflect greater uncertainty. Another way to put this
 					// is that they transmit the influence of previous pages in
 					// this sequence with relatively little alteration.
-					nextstep[j] = nextstep[j] * (evidenceVectors.get(i)[j] + 0.2d);
+					nextstep[j] = nextstep[j] * (evidenceVectors.get(i)[j] + 0.25d);
 					sum += nextstep[j];
 				}
 			}
@@ -125,7 +125,7 @@ public class ForwardBackward {
 					nextstep[j] = nextstep[j] * evidenceVectors.get(i)[j];
 				}
 				else {
-					nextstep[j] = nextstep[j] * (evidenceVectors.get(i)[j] + 0.2d);
+					nextstep[j] = nextstep[j] * (evidenceVectors.get(i)[j] + 0.25d);
 					// blank or nearly-blank pages flatten out the evidence
 					// to reflect greater uncertainty
 				}
