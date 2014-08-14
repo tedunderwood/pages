@@ -216,37 +216,36 @@ public class Volume {
 			// Then sum all occurrences of words to the appropriate vector index.
 			double textlines = 0.0001d;
 			double lines = 0.0001d;
-			double stdev = 0.0001d;
 			double caplines = 0.0001d;
 			double maxinitial = 0;
 			double maxpair = 0;
 			double allcapwords = 0;
 			double commas = 0;
-			double periods = 0;
 			double exclamationpoints = 0;
 			double questionmarks = 0;
-			double quotations = 0;
 			double endwpunct = 0;
 			double endwnumeral = 0;
 			double startwrubric = 0;
 			double startwname = 0;
 			double sequentialcaps = 0;
-			double wordnotinvocab = 0;
 			
 			for (String[] feature : thisPage) {
 				String word = feature[1];
 				if (vocabularyMap.containsKey(word)) {
-					types += 1;
-					// Note that since "wordNotInVocab" is, paradoxically, in the vocab,
-					// this will count separate occurrences of "wordNotInVocab" as new types,
-					// and sum their counts.
 					int idx = vocabularyMap.get(word);
 					double count = Double.parseDouble(feature[2]);
 					vector[idx] += count;
 					sumAllWords += count;
+
 					if (word.equals("wordNotInVocab")) {
-						wordnotinvocab += 1;
+						types += count;
 					}
+					else {
+						types += 1;
+					}
+					// Note that since "wordNotInVocab" is, paradoxically, in the vocab,
+					// this will count separate occurrences of "wordNotInVocab" as new types,
+					// and sum their counts.
 					
 					// Certain types handled collectively should actually increase
 					// the number of types by more than one. I could include personal
@@ -254,11 +253,9 @@ public class Volume {
 					// feature #23 high in pages of drama.
 					if (word.equals("propernoun")) {
 						types += (count - 1);
-						wordnotinvocab += count;
 					}
 					if (word.equals("placename")) {
 						types += (count - 1);
-						wordnotinvocab += count;
 					}
 				}
 				
@@ -292,14 +289,6 @@ public class Volume {
 				}
 				if (word.equals("#commas")) {
 					commas = Double.parseDouble(feature[2]);
-					continue;
-				}
-				if (word.equals("#periods")) {
-					periods = Double.parseDouble(feature[2]);
-					continue;
-				}
-				if (word.equals("#quotations")) {
-					quotations = Double.parseDouble(feature[2]);
 					continue;
 				}
 				if (word.equals("#exclamationpoints")) {
@@ -363,31 +352,30 @@ public class Volume {
 			// distanceFrom Mid: absolute distance from midpoint of volume, normalized for length of volume
 			vector[vocabularySize + 5] = allcapwords / sumAllWords;
 			// "allCapRatio" = words in all caps / words on this page
-			vector[vocabularySize + 6] = (maxinitial + 0.3d) / (textlines + 0.5d);
+			vector[vocabularySize + 6] = (maxinitial + 0.2d) / (textlines + 0.5d);
 			// "maxInitalRatio" = largest number of repeated initials / textlines
-			vector[vocabularySize + 7] = (maxpair + 0.2d) / (textlines + 0.5d);		
+			vector[vocabularySize + 7] = (maxpair + 0.1d) / (textlines + 0.5d);		
 			// "maxPairRatio" = largest number of repeats for alphabetically adjacent initials / textlines
 			vector[vocabularySize + 8] = sumAllWords / textlines;
 			// "wordsPerLine" = total words on page / total lines on page
 			vector[vocabularySize + 9] = sumAllWords;
 			// "totalWords" = total words on page
-			vector[vocabularySize + 10] = (types + 0.1d) / (sumAllWords + 0.1d);
+			vector[vocabularySize + 10] = (types + 1.0d) / (sumAllWords + 1.5d);
 			// type-token ratio
 			vector[vocabularySize + 11] = commas / sumAllWords;
 			// commas normalized for wordcount
 			vector[vocabularySize + 12] = textlines / lines;
 			// The number of lines with text divided by the total number of lines.
 			// periods normalized for wordcount
-			vector[vocabularySize + 13] = 0;
-			// stdev;
-			// Standard deviation of line lengths on the page, excluding blank lines.
+			vector[vocabularySize + 13] = vector[vocabularySize + 10] * vector[vocabularySize + 10];
+			// squared typetoken.
 			vector[vocabularySize + 14] = exclamationpoints / sumAllWords;
 			// exclamation points normalized for wordcount
 			vector[vocabularySize + 15] = questionmarks / sumAllWords;
 			// question marks normalized for wordcount
 			vector[vocabularySize + 16] = (endwpunct + 0.1d) / (textlines + 0.3d);
 			// Proportion of lines ending with punctuation.
-			vector[vocabularySize + 17] = endwnumeral / textlines;
+			vector[vocabularySize + 17] = (endwnumeral + 0.01d) / (textlines + 0.2d);
 			// Proportion of lines ending with a digit as either of last two chars.
 			vector[vocabularySize + 18] = startwname / textlines;
 			// Proportion of lines starting with a word that might be a name.
@@ -397,10 +385,10 @@ public class Volume {
 			// Largest number of capitalized initials in alphabetical sequence.
 			vector[vocabularySize + 21] = (sequentialcaps + 0.2d) / (caplines + 2.0d);
 			// Sequential caps normalized for the number of capitalized lines.
-			vector[vocabularySize + 22] = 0;
-			// stdev / (sumAllWords / textlines);
-			// normalized stdev
-			// Okay, now I'm just throwing stuff at the wall to see if it sticks.
+			vector[vocabularySize + 22] = vector[vocabularySize + 10] * Math.log(sumAllWords + 50.0d);
+			// the type-token ratio times a logarithmically corrected word length
+			// the intuition here is that type-token tends to decrease with page length,
+			// so it will be more informative to normalize by multiplying
 			vector[vocabularySize + 23] = Math.abs(sumAllWords - meanWordsPerPage) / meanWordsPerPage;
 			// absolute deviation, plus or minus, from mean num words, normalized by mean
 			

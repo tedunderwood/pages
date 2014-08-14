@@ -15,9 +15,9 @@ public class Global {
 	
 	public static final String[] STRUCTURALFEATURES = { "posInVol", "lineLengthRatio",
 		"capRatio", "wordRatio", "distanceFromMid", "allCapRatio", "maxInitialRatio", "maxPairRatio", 
-		"wordsPerLine", "totalWords", "typeToken", "commasNorm", "periodsNorm", "quotationsNorm",
+		"wordsPerLine", "totalWords", "typeToken", "commasNorm", "textlinesPerLine", "typeTokenSqrd",
 		"exclamationsNorm", "questionsNorm", "endWithPunct", "endWithNum", "startWithName", "startWithRubric",
-		"capSequence", "capSeqNorm", "startRatio", "absWordRatio", "metaBiography", "metaFiction"};
+		"capSequence", "capSeqNorm", "logTypeToken", "absWordRatio", "metaBiography", "metaFiction"};
 	
 		// "posInVol" = pagenum / totalpages
 		// "lineLengthRatio" = textlines / mean lines per page
@@ -31,8 +31,8 @@ public class Global {
 		// "totalWords" = total words on page
 		// "typeToken" = types on page / tokens on page
 		// "commasNorm" = commas normalized for wordcount
-		// "periodsNorm" = periods normalized for wordcount
-		// "quotationsNorm" = quotation marks normalized for wordcount
+		// "textLinesPerLine" = texlines divided by all lines
+		// "typeTokenSqrd" = is literally just typeToken times itself
 		// "exclamationsNorm" = exclamation points normalized for wordcount
 		// "questionsNorm" = questions normalized for wordcount
 		// "endWithPunct" = Proportion of lines ending with punctuation.
@@ -41,7 +41,7 @@ public class Global {
 		// "startWithRubric" = Proportion of lines starting with a capitalized word that ends w/ a period.
 		// "capSequence" = Largest number of capitalized initials in alphabetical sequence.
 		// "capSeqNorm" = Sequential caps normalized for the number of capitalized lines.
-		// "startRatio" = (startWName * startWRubric) / wordNotinVocab
+		// logTypeToken is type token normalized (multiplied) by the log of sumAllWords
 		// "absWordRatio" = absolute deviation from word mean for vol, normalized by word mean
 		// "metaBiography" = a flag based on metadata telling us this is biography
 		// "metaFiction" = a flag based on metadata that this is fiction
