@@ -6,7 +6,6 @@ package pages;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Executors;
@@ -39,7 +38,7 @@ public class MapPages {
 	static int NTHREADS = 10;
 	static int NFOLDS = 5;
 	static int minutesToWait = 30;
-	static String RIDGE = "3";
+	static String RIDGE = "0.002";
 	static int featureCount;
 	static int numGenres;
 	static int numInstances;
@@ -107,7 +106,7 @@ public class MapPages {
 		String featureDir;
 		String genreDir;
 		String additionalTrainingDir = null;
-		String vocabPath = "/Users/tunder/Dropbox/pagedata/newmethodvocabulary.txt";
+		String vocabPath = "/Users/tunder/Dropbox/pagedata/biggestvocabulary.txt";
 		
 		if (parser.isPresent("-output")) {
 			dirForOutput = parser.getString("-output");
@@ -195,8 +194,8 @@ public class MapPages {
 				System.out.println("We have " + Integer.toString(volsToProcess.size()) + " volumes to process.");
 				String modelPath = parser.getString("-model");
 				String modelName = parser.getString("-modelname");
-				Model model = deserializeModel(modelPath);
-				applyModel(model, dirToProcess, volsToProcess, dirForOutput, false, modelName);
+				// Model model = deserializeModel(modelPath);
+				applyModel(modelPath, dirToProcess, volsToProcess, dirForOutput, false, modelName);
 				// The final argument == false because this is not a pairtree process.
 			}
 			else {
@@ -212,9 +211,9 @@ public class MapPages {
 				
 				String modelPath = parser.getString("-model");
 				String modelName = parser.getString("-modelname");
-				Model model = deserializeModel(modelPath);
+				// Model model = deserializeModel(modelPath);
 				
-				applyModel(model, dirToProcess, dirtyHtids, dirForOutput, true, modelName);
+				applyModel(modelPath, dirToProcess, dirtyHtids, dirForOutput, true, modelName);
 				// The final argument == true because this is a pairtree process.
 			}
 		}
@@ -537,7 +536,7 @@ public class MapPages {
 		executive.shutdown();
 		// stops the addition of new threads; pool will terminate when these threads have completed
 		try {
-			executive.awaitTermination(6000, TimeUnit.SECONDS);
+			executive.awaitTermination(15000, TimeUnit.SECONDS);
 		}
 		catch (InterruptedException e) {
 			System.out.println("Helpful error message: Execution was interrupted.");
@@ -601,9 +600,10 @@ public class MapPages {
 	}
 
 	/**
-	 * Takes a previously-trained model and applies it to a new set of volumes.
+	 * Takes a previously-trained model and applies it to a new set of volumes. We parallelize
+	 * by creating multiple threads, each with its own copy of the model. Then we feed files
+	 * to those threads through a single BlockingQueue.
 	 * 
-	 * @param model A wrapper for a set of classes that define the model.
 	 * @param inputDir This can either be a directory that contains files, or the
 	 * root directory of a pairtree structure.
 	 * @param volsToProcess This is a list of file IDs. If this is being run on a local
@@ -614,59 +614,62 @@ public class MapPages {
 	 * the ClassifyingThread, which can invoke two different Corpus constructors depending on the
 	 * underlying data source being used.
 	 */
-	private static void applyModel (Model model, String inputDir, ArrayList<String> volsToProcess, 
+	private static void applyModel (String modelPath, String inputDir, ArrayList<String> volsToProcess, 
 			String dirForOutput, boolean isPairtree, String modelName) {
 		
-		vocabulary = model.vocabulary;
-		MarkovTable markov = model.markov;
-		ArrayList<String> genres = model.genreList.genreLabels;
-		FeatureNormalizer normalizer = model.normalizer;
-		ArrayList<GenrePredictor> classifiers = model.classifiers;
-		int numGenres = genres.size();
+		int CLASSIFYTHREADS = 6;
+		// The number of threads to create.
 		
-		System.out.println("Model loaded. Proceeding to apply it to unknown volumes.");
+		// Set up the pool. There's actually no reason this couldn't be run as separate threads, because
+		// the size of the pool equals the total number of tasks. But this is how I've set it up.
+		ExecutorService classifierPool = Executors.newFixedThreadPool(CLASSIFYTHREADS);
+		ArrayList<ClassifyingExecutor> workers = new ArrayList<ClassifyingExecutor>(CLASSIFYTHREADS);
 		
-		ExecutorService classifierPool = Executors.newFixedThreadPool(NTHREADS);
-		ArrayList<ClassifyingThread> filesToClassify = new ArrayList<ClassifyingThread>(volsToProcess.size());
+		// Create the queue so I can pass it to the worker threads.
+		BlockingQueue<String> jobQueue = new LinkedBlockingQueue<String>(12000);
+		for (int i = 0; i < CLASSIFYTHREADS; ++i) {
+			ClassifyingExecutor worker = new ClassifyingExecutor(inputDir, dirForOutput, modelPath, i, 
+					isPairtree, Global.outputJSON, modelName, jobQueue);
+			workers.add(worker);
+		}
 		
+		// Now we actually load filenames into the queue.
 		for (String thisFile : volsToProcess) {
 			thisFile = PairtreeReader.cleanID(thisFile);
-			// because they may have been passed in as dirty HathiTrust IDs with slashes and colons
-			ClassifyingThread fileClassifier = new ClassifyingThread(thisFile, inputDir, dirForOutput, numGenres, 
-					classifiers, markov, genres, vocabulary, normalizer, isPairtree, modelName);
-			filesToClassify.add(fileClassifier);
+			try {
+				jobQueue.offer(thisFile, 1, TimeUnit.MINUTES);
+			} catch (Exception e) {
+				System.out.println("Queue overflow, failed to accept " + thisFile);
+			}
 		}
 		
-		for (ClassifyingThread fileClassifier: filesToClassify) {
-			classifierPool.execute(fileClassifier);
+		// To ensure that thre threads stop when the end of the queue is reached, we pack 
+		// the end of the queue with STOP signals that they know how to interpret.
+		for (int i = 0; i < CLASSIFYTHREADS; ++i) {
+			try {
+				jobQueue.offer("STOP", 1, TimeUnit.MINUTES);
+			} catch (Exception e) {
+				System.out.println("Queue overflow, failed to accept STOP signal.");
+			}
 		}
 		
+		// Start all the worker jobs.
+		for (ClassifyingExecutor worker : workers) {
+			classifierPool.execute(worker);
+		}
+		
+		// No more jobs to add. Await termination of the running jobs. This will only
+		// happen when they exhaust the queue.
 		classifierPool.shutdown();
 		try {
-			classifierPool.awaitTermination(minutesToWait, TimeUnit.MINUTES);
+			classifierPool.awaitTermination(600, TimeUnit.MINUTES);
 		}
 		catch (InterruptedException e) {
 			System.out.println("Helpful error message: Execution was interrupted.");
 		}
-		// block until all threads are completed
 		
-		System.out.println("Classification complete. Now writing metadata (confidence levels.)");
+		System.out.println("Classification complete.");
 		
-		// write prediction metadata (confidence levels)
-		
-		String outPath = dirForOutput + "/predictionMetadata.tsv";
-		LineWriter headerWriter = new LineWriter(outPath, false);
-		headerWriter.print("htid\tmaxprob\tgap");
-		
-		LineWriter metadataWriter = new LineWriter(outPath, true);
-		
-		String[] metadata = new String[filesToClassify.size()];
-		int i = 0;
-		for (ClassifyingThread completedClassification : filesToClassify) {
-			metadata[i] = completedClassification.predictionMetadata;
-			i += 1;
-		}
-		metadataWriter.send(metadata);
 	}
 	
 	public static boolean genresAreEqual (String predictedGenre,

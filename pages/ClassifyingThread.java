@@ -79,7 +79,7 @@ public class ClassifyingThread implements Runnable {
 			}
 			
 			ArrayList<double[]> smoothedProbs = ForwardBackward.smooth(rawProbs, markov, wordLengths);
-			// smoothedProbs = ForwardBackward.smooth(smoothedProbs, markov);
+			// smoothedProbs = ForwardBackward.smooth(smoothedProbs, markov, wordLengths);
 			// This is really silly, but in practice it works: run the Markov smoothing twice!
 	
 			ClassificationResult rawResult = new ClassificationResult(rawProbs, numGenres, genres);

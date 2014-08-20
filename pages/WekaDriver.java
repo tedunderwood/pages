@@ -89,7 +89,7 @@ public class WekaDriver implements java.io.Serializable {
 		System.out.println(genreToIdentify + " count: " + poscount);
 		
 		try {
-			String[] options = {"-R", ridgeParameter};
+			String[] options = {"-R", ridgeParameter, "-M", "-1"};
 			logistic = new Logistic();
 			logistic.setOptions(options);
 			logistic.buildClassifier(trainingSet);
