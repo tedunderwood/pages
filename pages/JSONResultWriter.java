@@ -56,7 +56,7 @@ public class JSONResultWriter {
 		JSONObject topObject = new JSONObject();
 		topObject.put("volID", volID);
 		topObject.put("model", modelLabel);
-		topObject.put("probabilities", predictionArray);
+		topObject.put("smoothedProbabilities", predictionArray);
 		topObject.put("rawPredictions", rawGenres);
 		topObject.put("smoothedPredictions", smoothedGenres);
 		topObject.put("avgMaxProb", smoothedResult.averageMaxProb);

@@ -206,7 +206,7 @@ public class MapPages {
 				ArrayList<String> dirtyHtids = getSlice(slicePath);
 				dirToProcess = parser.getString("-pairtreeroot");
 				
-				minutesToWait = 500;
+				minutesToWait = 600;
 				// If this is being run on a pairtree, it's probably quite a large workset.
 				
 				String modelPath = parser.getString("-model");
@@ -662,7 +662,7 @@ public class MapPages {
 		// happen when they exhaust the queue.
 		classifierPool.shutdown();
 		try {
-			classifierPool.awaitTermination(600, TimeUnit.MINUTES);
+			classifierPool.awaitTermination(minutesToWait, TimeUnit.MINUTES);
 		}
 		catch (InterruptedException e) {
 			System.out.println("Helpful error message: Execution was interrupted.");

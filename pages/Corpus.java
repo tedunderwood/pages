@@ -280,6 +280,8 @@ public class Corpus {
 		featureMap = vocabulary.getMap();
 		
 		Volume thisVol = readAVolumeFromPairtree(rootPath, dirtyHtid, featureMap);
+		volumes = new ArrayList<Volume>(1);
+		volumes.add(thisVol);
 		
 		if (thisVol.totalWords > 1) {
 
